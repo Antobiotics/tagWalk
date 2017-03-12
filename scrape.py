@@ -1,8 +1,15 @@
 import os.path
 import re
 import csv
+
 import urllib2
+
+import mechanize
+import cookielib
 from bs4 import BeautifulSoup
+
+USERNAME = 'pubelle@gmail.com'
+PASSWORD = 'poubelle'
 
 OUTPUT_DIR = './data'
 PICS_DIR = OUTPUT_DIR + '/images'
@@ -15,6 +22,8 @@ BASE_PHOTOS = 'https://www.tag-walk.com/en/photo/list/woman/all-categories/all-c
 
 user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 headers = { 'User-Agent' : user_agent }
+
+
 
 def find_tags():
     print "Searching for tags in %s" %(BASE_URL)
@@ -60,6 +69,18 @@ def get_tag_num_results(tag):
     div = soup.find('div', {"class": "nbresult"})
     nb = div.text.replace(' ', '').replace('Results', '')
     return int(nb)
+
+
+cj = cookielib.CookieJar()
+br = mechanize.Browser()
+br.set_cookiejar(cj)
+br.open("https://www.tag-walk.com/auth/en/login")
+
+br.select_form(nr=0)
+print br
+br.form['_username'] = USERNAME
+br.form['_password'] = PASSWORD
+br.submit()
 
 for tag in tags:
     print tag
