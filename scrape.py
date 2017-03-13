@@ -111,7 +111,7 @@ def main():
     br.submit()
 
     must_collect = False
-    start_tag = 'bandana'
+    start_tag = 'black-white'
 
     for tag in tags:
         print tag
