@@ -1,8 +1,15 @@
+#!/usr/bin/env python
+
+# Dodgy script to capture images and tags.
+
+
 import os.path
 import re
 import csv
 
 import urllib2
+import socks
+import socket
 
 import mechanize
 import cookielib
@@ -21,9 +28,15 @@ TAG_REGEX = re.compile(TAG_BASE)
 BASE_PHOTOS = 'https://www.tag-walk.com/en/photo/list/woman/all-categories/all-cities/all-seasons/all-designers/'
 
 user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-headers = { 'User-Agent' : user_agent }
+headers = ('User-Agent', user_agent)
 
-
+# docker pull negash/docker-haproxy-tor:latest
+# docker run -d -p 5566:5566 -p 2090:2090 -e tors=25 negash/docker-haproxy-tor
+# curl --socks5 192.168.99.100:5566 http://ifconfig.io
+#socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "192.168.99.100", 5566)
+#socket.socket = socks.socksocket
+#for i in range(1, 10):
+    #print urllib2.urlopen('http://ifconfig.io').read()
 
 def find_tags():
     print "Searching for tags in %s" %(BASE_URL)
@@ -67,50 +80,73 @@ def get_tag_num_results(tag):
     soup = BeautifulSoup(page, "lxml")
     soup.prettify()
     div = soup.find('div', {"class": "nbresult"})
-    nb = div.text.replace(' ', '').replace('Results', '')
+    nb = (
+        div
+        .text
+        .replace(' ', '')
+        .replace('Results', '')
+        .replace('Result', '')
+    )
     return int(nb)
 
+def main():
+    cj = cookielib.LWPCookieJar()
+    br = mechanize.Browser()
+    br.set_cookiejar(cj)
+    br.set_handle_equiv(True)
+    br.set_handle_gzip(True)
+    br.set_handle_redirect(True)
+    br.set_handle_referer(True)
+    br.set_handle_robots(False)
+    br.set_handle_refresh(
+        mechanize._http.HTTPRefreshProcessor(), max_time=1
+    )
+    br.addheaders = [headers]
+    br.open("https://www.tag-walk.com/auth/en/login")
 
-cj = cookielib.CookieJar()
-br = mechanize.Browser()
-br.set_cookiejar(cj)
-br.open("https://www.tag-walk.com/auth/en/login")
+    br.select_form(nr=0)
+    print br
+    br.form['_username'] = USERNAME
+    br.form['_password'] = PASSWORD
+    br.submit()
 
-br.select_form(nr=0)
-print br
-br.form['_username'] = USERNAME
-br.form['_password'] = PASSWORD
-br.submit()
+    must_collect = False
+    start_tag = 'bandana'
 
-for tag in tags:
-    print tag
-    tag_path ='/'.join([PICS_DIR, tag])
+    for tag in tags:
+        print tag
+        if tag == start_tag:
+            must_collect = True
+        if must_collect:
+            tag_path ='/'.join([PICS_DIR, tag])
 
-    if not os.path.exists(tag_path):
-        os.makedirs(tag_path)
+            if not os.path.exists(tag_path):
+                os.makedirs(tag_path)
 
-    nb_results = get_tag_num_results(tag)
+            nb_results = get_tag_num_results(tag)
+            print "%s results to collect" %(nb_results)
+            img_counter = 0
+            page_counter = 1
 
-    img_counter = 0
-    page_counter = 1
+            while img_counter <= nb_results:
+                url_format = BASE_PHOTOS + tag + '?page=%s' %(page_counter)
+                print "Fetching %s" %(url_format)
+                page = br.open(url_format).read()
+                soup = BeautifulSoup(page, "lxml")
+                soup.prettify()
 
-    while img_counter <= nb_results:
-        url_format = BASE_PHOTOS + tag + '?page=%s' %(page_counter)
-        print "Fetching %s" %(url_format)
-        page = urllib2.urlopen(url_format).read()
-        soup = BeautifulSoup(page, "lxml")
-        soup.prettify()
+                anchors = soup.findAll('div', {"class": "photoimg"})
+                for anchor in anchors:
+                    img_name = anchor.a.img['alt']
+                    img_src = anchor.a.img['src']
+                    path ='/'.join([tag_path, img_name])
+                    print path
+                    with open(path, 'w') as img_file:
+                        #req = urllib2.Request(img_src, headers=headers)
+                        img = br.open(img_src).read()
+                        img_file.write(img)
+                        img_counter = img_counter + 1
 
-        anchors = soup.findAll('div', {"class": "photoimg"})
-        for anchor in anchors:
-            img_name = anchor.a.img['alt']
-            img_src = anchor.a.img['src']
-            path ='/'.join([tag_path, img_name])
-            print path
-            with open(path, 'w') as img_file:
-                req = urllib2.Request(img_src, headers=headers)
-                img = urllib2.urlopen(req).read()
-                img_file.write(img)
-                img_counter = img_counter + 1
+                page_counter = page_counter + 1
 
-        page_counter = page_counter + 1
+main()
