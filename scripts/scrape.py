@@ -8,6 +8,7 @@ import re
 import csv
 
 import urllib2
+import httplib
 import socks
 import socket
 
@@ -27,7 +28,7 @@ TAG_REGEX = re.compile(TAG_BASE)
 
 BASE_PHOTOS = 'https://www.tag-walk.com/en/photo/list/woman/all-categories/all-cities/all-seasons/all-designers/'
 
-user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
 headers = ('User-Agent', user_agent)
 
 # docker pull negash/docker-haproxy-tor:latest
@@ -104,6 +105,11 @@ def main():
     br.addheaders = [headers]
     br.open("https://www.tag-walk.com/auth/en/login")
 
+    br.set_proxies({
+        'http': '192.168.99.100:5566',
+        'https': '192.168.99.100:5566'
+    })
+
     br.select_form(nr=0)
     print br
     br.form['_username'] = USERNAME
@@ -111,7 +117,7 @@ def main():
     br.submit()
 
     must_collect = False
-    start_tag = 'black-white'
+    start_tag = 'grey-skirt'
 
     for tag in tags:
         print tag
@@ -143,9 +149,12 @@ def main():
                     print path
                     with open(path, 'w') as img_file:
                         #req = urllib2.Request(img_src, headers=headers)
-                        img = br.open(img_src).read()
-                        img_file.write(img)
-                        img_counter = img_counter + 1
+                        try:
+                            img = br.open(img_src).read()
+                            img_file.write(img)
+                            img_counter = img_counter + 1
+                        except httplib.BadStatusLine:
+                            pass
 
                 page_counter = page_counter + 1
 

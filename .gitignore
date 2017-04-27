@@ -1,1 +1,4 @@
-data/images/
+.DS_Store
+data/
+archives/
+*.tar.gz
