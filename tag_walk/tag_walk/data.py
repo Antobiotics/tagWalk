@@ -1,5 +1,6 @@
-import scipy.io
+import urllib
 
+import scipy.io
 import pandas as pd
 
 import tag_walk.logger as l
@@ -16,11 +17,13 @@ class PaperDoll():
 
     """
 
-    def __init__(self):
+    def __init__(self, build=True, readable_labels=False):
         self.mat = self.load_mat()
+        self.readable_labels = readable_labels
 
-        self.labels = self.build_labels()
-        self.df = self.build()
+        if build:
+            self.labels = self.build_labels()
+            self.df = self.build()
 
     @property
     def paperdoll_mat_path(self):
@@ -50,10 +53,11 @@ class PaperDoll():
         df['post_url'] = df['post_url'].apply(lambda row: row[0])
         df['tagging'] = df['tagging'].apply(lambda row: row[0])
 
-        def lookup_tags(row):
-            return [self.get_label_name(t) for t in row]
+        if self.readable_labels:
+            def lookup_tags(row):
+                return [self.get_label_name(t) for t in row]
 
-        df['labels'] = df['tagging'].apply(lookup_tags)
+            df['labels'] = df['tagging'].apply(lookup_tags)
 
         return df
 
@@ -93,3 +97,42 @@ class PaperDoll():
         path = '/'.join([self.output_dir, filename])
         l.INFO('Saving to %s' % path)
         return self.labels.to_csv(path, index=False, encoding='utf-8')
+
+    def save_images(self, dirname='paperdoll_images/'):
+        path = '/'.join([self.output_dir, dirname])
+        l.INFO('Saving to %s' % path)
+
+        misses = {}
+
+        def dl_url(row):
+            output_path = (
+                path +
+                str(row.id) +
+                '.jpg'
+            )
+            try:
+                l.INFO("Retrieving: %s" % row.url)
+                opener.retrieve(row.url, output_path)
+                return False
+            except Exception as e:
+                l.ERROR("%s --> %s" % (e, output_path))
+                return True
+
+        opener = urllib.URLopener()
+        for _, row in self.df.iterrows():
+            err = dl_url(row)
+            misses[row.id] = err
+
+        misses_df = pd.DataFrame({'id': misses.keys(),
+                                  'status': misses.values()})
+        misses_df.to_csv(path+'__meta.csv', index=False)
+        self.image_statuses_df = misses_df
+
+
+    def prepare(self, df=True, labels=True, images=True):
+        if df:
+            self.save_df()
+        if labels:
+            self.save_labels()
+        if images:
+            self.save_images()

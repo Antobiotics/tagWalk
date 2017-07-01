@@ -10,12 +10,16 @@ def main(**kwargs):
 
 
 @main.command()
-def prepare():
+@click.option('--df/--not-df', default=False)
+@click.option('--labels/--not-labels', default=False)
+@click.option('--images/--not-images', default=False)
+def paperdoll_prepare(df, labels, images):
 
     l.INFO("Preparing Paperdoll data")
-    paperdoll = data.PaperDoll()
-    paperdoll.save_df()
-    paperdoll.save_labels()
+    paperdoll = data.PaperDoll(readable_labels=False)
+    paperdoll.prepare(df=df,
+                      labels=labels,
+                      images=images)
 
 if __name__ == '__main__':
     main()
