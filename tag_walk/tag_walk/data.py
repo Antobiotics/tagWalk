@@ -2,8 +2,9 @@ import scipy.io
 
 import pandas as pd
 
+import tag_walk.logger as l
+import tag_walk.configuration as conf
 
-PAPERDOLL_DATA_PATH = '../data/paperdoll/data/'
 
 class PaperDoll():
     """
@@ -15,17 +16,33 @@ class PaperDoll():
 
     """
 
-    def __init__(self, data_path=PAPERDOLL_DATA_PATH):
-        self.data_path = data_path
+    def __init__(self):
         self.mat = self.load_mat()
 
         self.labels = self.build_labels()
         self.df = self.build()
 
+    @property
+    def paperdoll_mat_path(self):
+        return conf.get_config().get(conf.MODE, 'paperdoll')
+
+    @property
+    def data_path(self):
+        return conf.BASE_DATA + self.paperdoll_mat_path
+
+    @property
+    def output_dir(self):
+        return (
+            conf.BASE_DATA +
+            conf.get_config().get(conf.MODE, 'outputs')
+        )
+
     def load_mat(self):
+        l.INFO("Loading PaperDoll Mat file")
         return scipy.io.loadmat(self.data_path)
 
     def build(self):
+        l.INFO("Building Paperdoll DataFrame")
         df = pd.DataFrame(self.mat['samples'][0])
 
         df['id'] = df['id'].apply(lambda row: row[0][0])
@@ -41,6 +58,7 @@ class PaperDoll():
         return df
 
     def build_labels(self):
+        l.INFO("Building PaperDoll Labels")
         df = (
             pd
             .DataFrame(self.mat['labels'])
@@ -65,3 +83,13 @@ class PaperDoll():
         return self.labels[
             self.labels.index == label_index
         ].label.values
+
+    def save_df(self, filename='paperdoll.csv'):
+        path = '/'.join([self.output_dir, filename])
+        l.INFO('Saving to %s' % path)
+        return self.df.to_csv(path, index=False, encoding='utf-8')
+
+    def save_labels(self, filename='paperdoll_labels.csv'):
+        path = '/'.join([self.output_dir, filename])
+        l.INFO('Saving to %s' % path)
+        return self.labels.to_csv(path, index=False, encoding='utf-8')

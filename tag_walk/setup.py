@@ -37,5 +37,6 @@ setup(
         "scipy"
     ],
     dependency_links=[
+        'git+ssh://git@github.com/spotify/luigi.git',
     ]
 )
