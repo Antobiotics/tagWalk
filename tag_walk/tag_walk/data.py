@@ -1,3 +1,4 @@
+import os
 import urllib
 
 import scipy.io
@@ -111,8 +112,9 @@ class PaperDoll():
                 '.jpg'
             )
             try:
-                l.INFO("Retrieving: %s" % row.url)
-                opener.retrieve(row.url, output_path)
+                if not os.path.isfile(output_path):
+                    l.INFO("Retrieving: %s" % row.url)
+                    opener.retrieve(row.url, output_path)
                 return False
             except Exception as e:
                 l.ERROR("%s --> %s" % (e, output_path))
