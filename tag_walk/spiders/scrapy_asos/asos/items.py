@@ -3,11 +3,13 @@
 from scrapy import Item, Field
 
 class AsosBrand(Item):
+
     name = Field()
     id = Field()
     url = Field()
 
 class AsosItem(Item):
+
     iid = Field()
     url = Field()
 
@@ -26,6 +28,7 @@ class AsosItem(Item):
     image_url_large = Field()
 
 class AsosItemDetails(Item):
+
     url = Field()
 
     images = Field()

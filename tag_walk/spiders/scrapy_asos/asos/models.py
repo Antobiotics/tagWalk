@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 
@@ -15,28 +16,39 @@ def db_connect():
 def create_clothing_table(engine):
     DeclarativeBase.metadata.create_all(engine)
 
-class Jackets(DeclarativeBase):
-    """ Sqlalchemy Jackets model """
-    __tablename__ = "jackets"
+class Item(DeclarativeBase):
+    __tablename__ = "item"
 
-    id = Column(Integer, primary_key=True)
+    iid = Column('iid', String, primary_key=True)
+    url = Column('url', String)
+
     name = Column('name', String)
+    perm_name = Column('perm_name', String)
+
+    cid = Column('cid', String)
+    brand_id = Column('brand_id', String)
+
+    color = Column('color', String)
+
     price_orig = Column('price_orig', String, nullable=True)
     price_cur = Column('price_cur', String)
+
     image_url_small = Column('image_url_small', String)
     image_url_large = Column('image_url_large', String)
 
+class Brand(DeclarativeBase):
+    __tablename__ = 'brand'
 
-class Clothing(DeclarativeBase):
-    """ Sqlalchemy Jackets model """
-    __tablename__ = "clothing"
-
-    id = Column(Integer, primary_key=True)
+    id = Column('id', String, primary_key=True)
     name = Column('name', String)
-    type = Column('type', String)
-    price_orig = Column('price_orig', String, nullable=True)
-    price_cur = Column('price_cur', String)
-    image_url_small = Column('image_url_small', String)
-    image_url_large = Column('image_url_large', String)
+    url = Column('url', String)
 
 
+class ItemDetails(DeclarativeBase):
+    __tablename__ = 'item_details'
+
+    url = Column('url', String, primary_key=True)
+    images = Column('images', postgresql.ARRAY(String))
+    cat1 = Column('cat1', String)
+    cat2 = Column('cat2', String)
+    tags = Column('tags', postgresql.ARRAY(String))

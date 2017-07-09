@@ -30,6 +30,12 @@ class AsosItemDetailsSpider(CrawlSpider):
     name = "asos_item_details"
     allow_domains = ["asos.com"]
 
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'asos.pipelines.ItemDetailPipeline': 3
+        }
+    }
+
     def parse(self, response):
         selector = Selector(response)
 
@@ -62,33 +68,43 @@ class AsosItemDetailsSpider(CrawlSpider):
             .css('.product-description')
             .xpath('./span/a[1]/@href')
             .extract()
-        )[0]
+        )
         print cat_url
 
-        cat_url_re = (
-            re
-            .compile(r'/women/(.*)/(.*)/.*\?cid=.*')
-        )
+        if len(cat_url) != 0:
+            print cat_url
+            cat_url = cat_url[0]
 
-        res = cat_url_re.search(cat_url.lower())
-        if res:
-            details['cat1'] = res.group(1)
-            details['cat2'] = res.group(2)
+            cat_url_re = (
+                re
+                .compile(r'/women/(.*)/(.*)/.*\?cid=.*')
+            )
 
-        tags = (
-            selector
-            .css('.product-description')
-            .xpath('./span/ul/li/text()')
-            .extract()
-        )
+            res = cat_url_re.search(cat_url.lower())
+            if res:
+                details['cat1'] = res.group(1)
+                details['cat2'] = res.group(2)
 
-        details['tags'] = tags
-        print details
+            tags = (
+                selector
+                .css('.product-description')
+                .xpath('./span/ul/li/text()')
+                .extract()
+            )
+
+            details['tags'] = tags
+        yield details
 
 
 class AsosBrandSpider(CrawlSpider):
     name = "asos_brand"
     allow_domains = ["asos.com"]
+
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'asos.pipelines.ItemPipeline': 2
+        }
+    }
 
     def parse(self, response):
         selector = Selector(response)
@@ -98,11 +114,11 @@ class AsosBrandSpider(CrawlSpider):
             .css('.product-container')
         )
 
-        for container in product_containers[:2]:
+        for container in product_containers:
             item = AsosItem()
             res = BRAND_URL_RE.search(response.url)
             if res:
-                item['brand_id'] = res.group(2)
+                item['brand_id'] = res.group(2).replace('&via=top', '')
 
 
             item['image_url_small'] = (
@@ -110,15 +126,15 @@ class AsosBrandSpider(CrawlSpider):
                 .css('.img-wrap')
                 .css('.product-img')
                 .xpath('@src')
-                .extract()[0]
-            )
+                .extract()
+            )[0]
 
             item['name'] = (
                 container
                 .css('.name-fade')
                 .xpath('./span/text()')
                 .extract()
-            )
+            )[0]
 
             item['price_cur'] = (
                 container
@@ -126,7 +142,7 @@ class AsosBrandSpider(CrawlSpider):
                 .css('.price-current')
                 .xpath('./span[@class="price"]/text()')
                 .extract()
-            )
+            )[0]
 
             item['price_orig'] = (
                 container
@@ -135,6 +151,10 @@ class AsosBrandSpider(CrawlSpider):
                 .xpath('./span[@class="price"]/text()')
                 .extract()
             )
+
+            if item['price_orig'] == []:
+                item['price_orig'] = ""
+
 
             item['url'] = (
                 container
@@ -149,7 +169,8 @@ class AsosBrandSpider(CrawlSpider):
                 item['iid'] = res.group(2)
                 item['color'] = res.group(3)
                 item['cid'] = res.group(4)
-
+            yield item
+            #print item
             yield Request(item['url'], callback=AsosItemDetailsSpider().parse)
 
         next_page = (
@@ -167,13 +188,13 @@ class AsosBrandSpider(CrawlSpider):
                     re.compile('(http://.*)(&pge=.*)')
                     .split(response.url)
                 )
-                print base_split
+                #print base_split
                 next_url = base_split[0] + res.group(1)
 
                 if len(base_split) > 1:
                     next_url = base_split[1] + res.group(1)
 
-                print "Next url: %s"  %(next_url)
+                #print "Next url: %s"  %(next_url)
                 yield Request(next_url, callback=AsosBrandSpider().parse)
 
 
@@ -183,6 +204,12 @@ class AsosSpider(CrawlSpider):
     start_urls = [
         "http://www.asos.com/women/a-to-z-of-brands/cat/?cid=1340"
     ]
+
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'asos.pipelines.BrandPipeline': 1
+        }
+    }
 
     def parse(self, response):
 
@@ -200,13 +227,15 @@ class AsosSpider(CrawlSpider):
                 brand = AsosBrand()
 
                 brand['name'] = res.group(1)
-                brand['id'] = res.group(2)
+                brand['id'] = res.group(2).replace('%via=top', '')
                 brand['url'] = href
 
                 brands.append(brand)
 
-        for brand in brands[:2]:
+        for brand in brands:
+            yield brand
             url = brand['url']
             spider = AsosBrandSpider()
+
             yield Request(url, callback=spider.parse)
 
