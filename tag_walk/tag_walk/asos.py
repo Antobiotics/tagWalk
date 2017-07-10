@@ -138,11 +138,10 @@ class Asos(AsosConnection):
             )
             try:
                 images_urls = list(set(
-                    [row['image_url_small']] +
                     row['images']
                 ))
                 for i, url in enumerate(images_urls):
-                    url = url.replace("$S$", "$XL$")
+                    url = url.replace("$S$", "$XXL$")
                     img_path = (
                         output_path + '__' +
                         str(i) + '.jpg'
