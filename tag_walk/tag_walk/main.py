@@ -23,11 +23,16 @@ def paperdoll_prepare(df, labels, images):
                       images=images)
 
 @main.command()
-def asos_prepare():
+@click.option('--df/--not-df', default=False)
+@click.option('--labels/--not-labels', default=False)
+@click.option('--images/--not-images', default=False)
+def asos_prepare(df, labels, images):
 
     l.INFO("Preparing ASOS data")
     prep = asos.Asos()
-    prep.prepare()
+    prep.prepare(df=df,
+                 labels=labels,
+                 images=images)
 
 
 
