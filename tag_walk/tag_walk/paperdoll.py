@@ -19,6 +19,9 @@ class PaperDoll():
     """
 
     def __init__(self, build=True, readable_labels=False):
+        self.df = None
+        self.labels = None
+
         self.mat = self.load_mat()
         self.readable_labels = readable_labels
 
@@ -132,6 +135,11 @@ class PaperDoll():
 
 
     def prepare(self, df=True, labels=True, images=True):
+        if self.df is None:
+            self.df = self.build()
+        if self.labels is None:
+            self.labels = self.build_labels()
+
         if df:
             self.save_df()
         if labels:
