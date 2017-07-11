@@ -25,7 +25,9 @@ setup(
         "Topic :: Software Development",
     ],
     packages=[
-        "tag_walk"
+        "tag_walk",
+        "tag_walk.commands",
+        "tag_walk.commands.builders"
     ],
     install_requires=[
         "click",

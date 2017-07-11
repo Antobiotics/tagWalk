@@ -69,7 +69,7 @@ class Asos(AsosConnection):
         self.labels = None
 
         if build:
-            self.labels = self.build_labels
+            self.labels = self.build_labels()
             self.df = self.build()
 
     @property
