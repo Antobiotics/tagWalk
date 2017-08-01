@@ -21,5 +21,3 @@ def cli(ctx, df, labels, images):
                  labels=labels,
                  images=images)
 
-
-

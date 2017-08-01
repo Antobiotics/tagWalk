@@ -1,3 +1,4 @@
+from glob import glob
 
 import tag_walk.logger as l
 import tag_walk.configuration as conf
@@ -18,6 +19,18 @@ class Fashionista():
             conf.BASE_DATA +
             conf.get_config().get(conf.MODE, 'outputs')
         )
+
+    @property
+    def data_path(self):
+        return (
+            conf.BASE_DATA +
+            conf.get_config()
+            .get(conf.MODE, 'fashionista')
+        )
+
+    def get_h5_file_paths(self):
+        dir_path = self.data_path + 'compiled'
+        return glob(dir_path + "*.h5")
 
     def build(self):
         pass
