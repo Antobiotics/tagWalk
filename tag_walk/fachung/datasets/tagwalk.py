@@ -14,6 +14,7 @@ from PIL import Image
 import fachung.configuration as conf
 
 BASE_PATH = (
+    conf.BASE_DATA +
     conf.get_config()
     .get(conf.MODE, 'tag_walk')
 )
@@ -32,7 +33,7 @@ DEFAULT_TRANSFORMS = (
 
 class TagwalkDataset(Dataset):
     def __init__(self, csv_path=None, img_path=None, transform=None):
-
+        print BASE_PATH
         if csv_path is None:
             csv_path = BASE_PATH + '/assocs.csv'
 
@@ -75,3 +76,11 @@ class TagwalkDataset(Dataset):
 
     def __len__(self):
         return len(self.X_train.index)
+
+def tagwalk_dataloader():
+    tw_dataset = TagwalkDataset()
+    train_loader = DataLoader(tw_dataset,
+                              batch_size=256,
+                              shuffle=True,
+                              num_workers=4)
+    return train_loader
