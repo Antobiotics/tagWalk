@@ -110,8 +110,9 @@ def set_browser():
 
 
 class TagWalkCrawler():
-    def __init__(self):
+    def __init__(self, reset_mem=False):
         self.browser = set_browser()
+        self.reset_mem = reset_mem
 
         self.tags = get_tags()
 
@@ -124,11 +125,14 @@ class TagWalkCrawler():
 
     def set_memory(self):
         try:
-            with open(self.memory_path, 'w') as mem_file:
-                self.memory = json.loads(mem_file)
-        except Exception:
+            with open(self.memory_path, 'r') as mem_file:
+                self.memory = json.load(mem_file)
+                if self.reset_mem:
+                    for key in self.memory:
+                        self.memory[key]['done'] = False
+        except Exception as e:
+            print e
             self.memory = {}
-            self.save_memory()
 
     def get_unprocessed_tags(self):
         unprocessed_tags = []
@@ -157,7 +161,7 @@ class TagWalkCrawler():
     def fetch_data(self, tag_desc):
         img_counter = 0
 
-        nb_results = 1
+        nb_results = tag_desc['num_images']
         while img_counter <= nb_results:
             url_format = BASE_PHOTOS + tag_desc['name'] + '?page=%s' %(tag_desc['current_page'])
             print "Fetching %s" %(url_format)
@@ -167,8 +171,6 @@ class TagWalkCrawler():
 
             anchors = soup.findAll('div', {"class": "photoimg"})
             for anchor in anchors:
-                print tag_desc
-
                 href = anchor.a['href']
 
                 image_desc = {
@@ -182,8 +184,8 @@ class TagWalkCrawler():
                 }
 
                 processed_src = [image['src'] for image in tag_desc['images']]
+                print "Already processed: %s/%s" %(len(processed_src), nb_results)
                 if not image_desc['src'] in processed_src:
-                    print image_desc
                     with open(image_desc['path'], 'w') as img_file:
                         try:
                             img = self.browser.open(image_desc['src']).read()
@@ -193,7 +195,7 @@ class TagWalkCrawler():
                             tag_desc['images'].append(image_desc)
                             self.update_memory(tag_desc)
 
-                            sleep_time = randint(1, 20)
+                            sleep_time = randint(0, 3)
                             print "Sleeping %d" %(sleep_time)
                             sleep(sleep_time)
 
@@ -215,7 +217,7 @@ class TagWalkCrawler():
 
     def run(self):
         to_process_tags = self.get_unprocessed_tags()
-        for tag_name in to_process_tags:
+        for tag_name in to_process_tags[0:1]:
             tag_path = self.mk_tag_dir(tag_name)
             nb_results = get_tag_num_results(tag_name)
             print "%s results to collect" %(nb_results)
@@ -237,7 +239,7 @@ class TagWalkCrawler():
 
 
 if __name__ == "__main__":
-    crawler = TagWalkCrawler()
+    crawler = TagWalkCrawler(reset_mem=False)
     try:
         crawler.run()
     except KeyboardInterrupt:
