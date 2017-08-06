@@ -1,6 +1,6 @@
 from luigi.configuration import LuigiConfigParser
 
-def get_config_(path = '/opt/cctv/tag_walk.cfg'):
+def get_config_(path = '/opt/cctv/fachung.cfg'):
     config = LuigiConfigParser.instance()
 
     if not path is None:

@@ -1,7 +1,7 @@
 from glob import glob
 
-import tag_walk.logger as l
-import tag_walk.configuration as conf
+import fachung.logger as l
+import fachung.configuration as conf
 
 
 class Fashionista():
