@@ -1,8 +1,8 @@
 import click
 
-import tag_walk.logger as l
+import fachung.logger as l
 
-from tag_walk.commands.cli import BuilderCommand
+from fachung.commands.cli import BuilderCommand
 
 @click.group()
 def main(**kwargs):

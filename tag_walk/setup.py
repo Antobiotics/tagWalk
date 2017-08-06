@@ -9,14 +9,14 @@ except ImportError:
     pass
 
 setup(
-    name="tag_walk",
+    name="fachung",
     version='1.0.0',
     description="TF Recommendations and Embeddings",
     author_email="greg@dice.fm",
-    url="https://github.com/antobiotics/tag_walk",
+    url="https://github.com/antobiotics/fachung",
     platforms="Posix; MacOS X; Windows",
     entry_points = {
-        "console_scripts": ['tag_walk = tag_walk.main:main']
+        "console_scripts": ['fachung = fachung.main:main']
     },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -25,9 +25,11 @@ setup(
         "Topic :: Software Development",
     ],
     packages=[
-        "tag_walk",
-        "tag_walk.commands",
-        "tag_walk.commands.builders"
+        "fachung",
+        "fachung.commands",
+        "fachung.commands.builders",
+        "fachung.preparation",
+        "fachung.datasets"
     ],
     install_requires=[
         "click",

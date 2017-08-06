@@ -55,7 +55,7 @@ class TagWalkCommand(click.MultiCommand):
         return rv
 
     def get_command(self, ctx, name):
-        module_str = '.'.join(['tag_walk', 'commands', self.sub_folder])
+        module_str = '.'.join(['fachung', 'commands', self.sub_folder])
         try:
             if sys.version_info[0] == 2:
                 name = name.encode('ascii', 'replace')

@@ -2,8 +2,8 @@ import abc
 
 import pandas as pd
 
-import tag_walk.logger as l
-from tag_walk import configuration
+import fachung.logger as l
+from fachung import configuration
 
 
 try:

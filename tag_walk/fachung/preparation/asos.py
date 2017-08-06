@@ -4,10 +4,10 @@ import urllib
 
 import pandas as pd
 
-import tag_walk.logger as l
-import tag_walk.configuration as conf
+import fachung.logger as l
+import fachung.configuration as conf
 
-from tag_walk.postgres import AsosConnection
+from fachung.postgres import AsosConnection
 
 IID_CLEAN = re.compile(r'(.*)&.*$')
 URL_DETAIL_GET_PROD = re.compile(r'.*/(.*)\?iid=(.*)&.*')
