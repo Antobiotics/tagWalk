@@ -29,8 +29,7 @@ class Fashionista():
         )
 
     def get_h5_file_paths(self):
-        dir_path = self.data_path + 'compiled'
-        return glob(dir_path + "*.h5")
+        return glob(self.data_path + "/*.h5")
 
     def build(self):
         pass
