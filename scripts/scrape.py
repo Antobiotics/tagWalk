@@ -207,6 +207,8 @@ class TagWalkCrawler():
                             print "UNKOWN Error: %s" % e
                             self.update_memory(tag_desc)
                             return tag_desc
+                else:
+                    img_counter = img_counter + 1
 
             tag_desc['current_page'] = tag_desc['current_page'] + 1
 
@@ -217,7 +219,7 @@ class TagWalkCrawler():
 
     def run(self):
         to_process_tags = self.get_unprocessed_tags()
-        for tag_name in to_process_tags[0:1]:
+        for tag_name in to_process_tags:
             tag_path = self.mk_tag_dir(tag_name)
             nb_results = get_tag_num_results(tag_name)
             print "%s results to collect" %(nb_results)
