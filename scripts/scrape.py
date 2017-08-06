@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
-# Dodgy script to capture images and tags.
-
-
 import os.path
 import re
 import csv
+import json
+
+from random import randint
+from time import sleep
 
 import urllib2
 import httplib
@@ -19,9 +19,14 @@ from bs4 import BeautifulSoup
 USERNAME = 'pubelle@gmail.com'
 PASSWORD = 'poubelle'
 
-OUTPUT_DIR = './data'
-PICS_DIR = OUTPUT_DIR + '/images'
+OUTPUT_DIR = '../tag_walk/data/tag_walk/'
+MEMORY_PATH = OUTPUT_DIR + 'crawl_memory.json'
+PICS_DIR = OUTPUT_DIR + '/images/v2'
+
+
 TAG_PATH = '/'.join([OUTPUT_DIR, 'tags.csv'])
+
+
 BASE_URL = 'https://www.tag-walk.com/en/'
 TAG_BASE = r'/en/photo/list/woman/all-categories/all-cities/all-seasons/all-designers/(.*)$'
 TAG_REGEX = re.compile(TAG_BASE)
@@ -31,13 +36,6 @@ BASE_PHOTOS = 'https://www.tag-walk.com/en/photo/list/woman/all-categories/all-c
 user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
 headers = ('User-Agent', user_agent)
 
-# docker pull negash/docker-haproxy-tor:latest
-# docker run -d -p 5566:5566 -p 2090:2090 -e tors=25 negash/docker-haproxy-tor
-# curl --socks5 192.168.99.100:5566 http://ifconfig.io
-#socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "192.168.99.100", 5566)
-#socket.socket = socks.socksocket
-#for i in range(1, 10):
-    #print urllib2.urlopen('http://ifconfig.io').read()
 
 def find_tags():
     print "Searching for tags in %s" %(BASE_URL)
@@ -72,8 +70,6 @@ def get_tags(path=TAG_PATH):
         return list(tags)
     return read_tags(path=path)
 
-tags = get_tags()
-
 
 def get_tag_num_results(tag):
     url_format = BASE_PHOTOS + tag + '?page=1'
@@ -90,7 +86,7 @@ def get_tag_num_results(tag):
     )
     return int(nb)
 
-def main():
+def set_browser():
     cj = cookielib.LWPCookieJar()
     br = mechanize.Browser()
     br.set_cookiejar(cj)
@@ -105,57 +101,146 @@ def main():
     br.addheaders = [headers]
     br.open("https://www.tag-walk.com/auth/en/login")
 
-    br.set_proxies({
-        'http': '192.168.99.100:5566',
-        'https': '192.168.99.100:5566'
-    })
-
     br.select_form(nr=0)
-    print br
     br.form['_username'] = USERNAME
     br.form['_password'] = PASSWORD
     br.submit()
 
-    must_collect = False
-    start_tag = 'grey-skirt'
+    return br
 
-    for tag in tags:
-        print tag
-        if tag == start_tag:
-            must_collect = True
-        if must_collect:
-            tag_path ='/'.join([PICS_DIR, tag])
 
-            if not os.path.exists(tag_path):
-                os.makedirs(tag_path)
+class TagWalkCrawler():
+    def __init__(self):
+        self.browser = set_browser()
 
-            nb_results = get_tag_num_results(tag)
-            print "%s results to collect" %(nb_results)
-            img_counter = 0
-            page_counter = 1
+        self.tags = get_tags()
 
-            while img_counter <= nb_results:
-                url_format = BASE_PHOTOS + tag + '?page=%s' %(page_counter)
-                print "Fetching %s" %(url_format)
-                page = br.open(url_format).read()
-                soup = BeautifulSoup(page, "lxml")
-                soup.prettify()
+        self.memory_path = MEMORY_PATH
+        self.set_memory()
 
-                anchors = soup.findAll('div', {"class": "photoimg"})
-                for anchor in anchors:
-                    img_name = anchor.a.img['alt']
-                    img_src = anchor.a.img['src']
-                    path ='/'.join([tag_path, img_name])
-                    print path
-                    with open(path, 'w') as img_file:
-                        #req = urllib2.Request(img_src, headers=headers)
+    def save_memory(self):
+        with open(self.memory_path, 'w') as mem_file:
+            mem_file.write(json.dumps(self.memory))
+
+    def set_memory(self):
+        try:
+            with open(self.memory_path, 'w') as mem_file:
+                self.memory = json.loads(mem_file)
+        except Exception:
+            self.memory = {}
+            self.save_memory()
+
+    def get_unprocessed_tags(self):
+        unprocessed_tags = []
+        for tag in self.tags:
+            done = False
+            try:
+                done = self.memory[tag]['done']
+            except KeyError:
+                pass
+
+            if not done:
+                unprocessed_tags.append(tag)
+        return unprocessed_tags
+
+    def mk_tag_dir(self, tag):
+        tag_path ='/'.join([PICS_DIR, tag])
+        if not os.path.exists(tag_path):
+            os.makedirs(tag_path)
+        return tag_path
+
+    def update_memory(self, tag_desc):
+        self.memory[tag_desc['name']] = tag_desc
+        self.save_memory()
+
+
+    def fetch_data(self, tag_desc):
+        img_counter = 0
+
+        nb_results = 1
+        while img_counter <= nb_results:
+            url_format = BASE_PHOTOS + tag_desc['name'] + '?page=%s' %(tag_desc['current_page'])
+            print "Fetching %s" %(url_format)
+            page = self.browser.open(url_format).read()
+            soup = BeautifulSoup(page, "lxml")
+            soup.prettify()
+
+            anchors = soup.findAll('div', {"class": "photoimg"})
+            for anchor in anchors:
+                print tag_desc
+
+                href = anchor.a['href']
+
+                image_desc = {
+                    'name': anchor.a.img['alt'],
+                    'href': anchor.a['href'],
+                    'season': href.split('/')[5],
+                    'designer': href.split('/')[6],
+                    'src': anchor.a.img['src'],
+                    'path': '/'.join([tag_desc['local_path'],
+                                      anchor.a.img['alt']])
+                }
+
+                processed_src = [image['src'] for image in tag_desc['images']]
+                if not image_desc['src'] in processed_src:
+                    print image_desc
+                    with open(image_desc['path'], 'w') as img_file:
                         try:
-                            img = br.open(img_src).read()
+                            img = self.browser.open(image_desc['src']).read()
                             img_file.write(img)
                             img_counter = img_counter + 1
-                        except httplib.BadStatusLine:
-                            pass
 
-                page_counter = page_counter + 1
+                            tag_desc['images'].append(image_desc)
+                            self.update_memory(tag_desc)
 
-main()
+                            sleep_time = randint(1, 20)
+                            print "Sleeping %d" %(sleep_time)
+                            sleep(sleep_time)
+
+                        except httplib.BadStatusLine as e:
+                            print "BAD Status Error: %s" % e
+                            self.update_memory(tag_desc)
+
+                        except Exception as e:
+                            print "UNKOWN Error: %s" % e
+                            self.update_memory(tag_desc)
+                            return tag_desc
+
+            tag_desc['current_page'] = tag_desc['current_page'] + 1
+
+        tag_desc['done'] = True
+        self.update_memory(tag_desc)
+        return tag_desc
+
+
+    def run(self):
+        to_process_tags = self.get_unprocessed_tags()
+        for tag_name in to_process_tags:
+            tag_path = self.mk_tag_dir(tag_name)
+            nb_results = get_tag_num_results(tag_name)
+            print "%s results to collect" %(nb_results)
+
+            tag_descriptor = {
+                'current_page': 1,
+                'done': False,
+                'name': tag_name,
+                'num_images': nb_results,
+                'local_path': tag_path,
+                'images': []
+            }
+            if tag_name in self.memory.keys():
+                tag_descriptor = self.memory[tag_name]
+
+            tag_desc = self.fetch_data(tag_descriptor)
+            print tag_desc
+
+
+
+if __name__ == "__main__":
+    crawler = TagWalkCrawler()
+    try:
+        crawler.run()
+    except KeyboardInterrupt:
+        print "Abort!!!! Save Memory First!"
+        print crawler.memory
+        crawler.save_memory()

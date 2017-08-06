@@ -4,8 +4,8 @@ import urllib
 import scipy.io
 import pandas as pd
 
-import tag_walk.logger as l
-import tag_walk.configuration as conf
+import fachung.logger as l
+import fachung.configuration as conf
 
 
 class PaperDoll():
