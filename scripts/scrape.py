@@ -149,6 +149,10 @@ class TagWalkCrawler():
             os.makedirs(tag_path)
         return tag_path
 
+    def update_memory(self, tag_desc):
+        self.memory[tag_desc['name']] = tag_desc
+        self.save_memory()
+
 
     def fetch_data(self, tag_desc):
         img_counter = 0
@@ -187,20 +191,25 @@ class TagWalkCrawler():
                             img_counter = img_counter + 1
 
                             tag_desc['images'].append(image_desc)
+                            self.update_memory(tag_desc)
+
                             sleep_time = randint(1, 20)
                             print "Sleeping %d" %(sleep_time)
                             sleep(sleep_time)
 
                         except httplib.BadStatusLine as e:
                             print "BAD Status Error: %s" % e
+                            self.update_memory(tag_desc)
 
                         except Exception as e:
                             print "UNKOWN Error: %s" % e
+                            self.update_memory(tag_desc)
                             return tag_desc
 
             tag_desc['current_page'] = tag_desc['current_page'] + 1
 
         tag_desc['done'] = True
+        self.update_memory(tag_desc)
         return tag_desc
 
 
@@ -224,10 +233,14 @@ class TagWalkCrawler():
 
             tag_desc = self.fetch_data(tag_descriptor)
             print tag_desc
-            self.memory[tag_desc['name']] = tag_desc
 
 
 
 if __name__ == "__main__":
     crawler = TagWalkCrawler()
-    crawler.run()
+    try:
+        crawler.run()
+    except KeyboardInterrupt:
+        print "Abort!!!! Save Memory First!"
+        print crawler.memory
+        crawler.save_memory()
