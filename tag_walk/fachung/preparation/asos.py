@@ -4,10 +4,10 @@ import urllib
 
 import pandas as pd
 
-import tag_walk.logger as l
-import tag_walk.configuration as conf
+import fachung.logger as l
+import fachung.configuration as conf
 
-from tag_walk.postgres import AsosConnection
+from fachung.postgres import AsosConnection
 
 IID_CLEAN = re.compile(r'(.*)&.*$')
 URL_DETAIL_GET_PROD = re.compile(r'.*/(.*)\?iid=(.*)&.*')
@@ -69,7 +69,7 @@ class Asos(AsosConnection):
         self.labels = None
 
         if build:
-            self.labels = self.build_labels
+            self.labels = self.build_labels()
             self.df = self.build()
 
     @property
