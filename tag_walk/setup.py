@@ -1,7 +1,4 @@
-#try:
 from setuptools import setup
-#except:
-    #from distutils.core import setup
 
 try:
     import multiprocessing
@@ -15,7 +12,7 @@ setup(
     author_email="greg@dice.fm",
     url="https://github.com/antobiotics/fachung",
     platforms="Posix; MacOS X; Windows",
-    entry_points = {
+    entry_points={
         "console_scripts": ['fachung = fachung.main:main']
     },
     classifiers=[
@@ -32,15 +29,17 @@ setup(
         "fachung.datasets"
     ],
     install_requires=[
+        "h5py",
+        "sklearn",
         "click",
+        "coloredlogs",
         "executor",
         "numpy",
         "tensorflow",
         "keras",
         "pandas",
+        "luigi",
         "scipy"
     ],
-    dependency_links=[
-        'git+ssh://git@github.com/spotify/luigi.git',
-    ]
+    dependency_links=[]
 )

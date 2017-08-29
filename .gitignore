@@ -2,3 +2,7 @@
 data/
 archives/
 *.tar.gz
+tags
+tags.*
+tag_walk/tags
+tag_walk/tags.*
