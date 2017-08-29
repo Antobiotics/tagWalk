@@ -29,17 +29,17 @@ setup(
         "fachung.datasets"
     ],
     install_requires=[
+        "h5py",
+        "sklearn",
         "click",
+        "coloredlogs",
         "executor",
         "numpy",
         "tensorflow",
         "keras",
         "pandas",
         "luigi",
-        "h5py",
         "scipy"
     ],
-    dependency_links=[
-        'git+ssh://git@github.com/spotify/luigi.git',
-    ]
+    dependency_links=[]
 )
