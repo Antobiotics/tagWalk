@@ -1,17 +1,21 @@
 from luigi.configuration import LuigiConfigParser
 
-def get_config_(path = '/opt/cctv/fachung.cfg'):
+
+def get_config_(path='/opt/cctv/fachung.cfg'):
     config = LuigiConfigParser.instance()
 
-    if not path is None:
+    if path is not None:
         config.add_config_path(path)
 
     return config
 
+
 CONFIGURATION = get_config_()
+
 
 def get_config():
     return CONFIGURATION
+
 
 MODE = (
     get_config()
