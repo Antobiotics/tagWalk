@@ -1,15 +1,24 @@
 
 setup: clean
-	python setup.py develop
+	python3 setup.py develop
 
-setup-dev: clean
-	virtualenv env
-	./env/bin/pip install -U pip
-	./env/bin/pip install -U setuptools
-	./env/bin/python setup.py develop
+dependencies-others:
+	pip3 install h5py
+	pip3 intall luigi
+
+# Macosx, no cuda
+dependencies-cpu: dependencies-others
+	pip3 install tensorflow
+	pip3 install http://download.pytorch.org/whl/torch-0.2.0.post3-cp36-cp36m-macosx_10_7_x86_64.whl 
+	pip3 install torchvision
+
+dependencies-gpu: dependencies-others
+	pip3 install tensorflow-gpu
+	pip3 install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp36-cp36m-manylinux1_x86_64.whl 
+	pip3 install torchvision
 
 install: clean
-	python setup.py install
+	python3 setup.py install
 
 clean:
 	rm -rf env

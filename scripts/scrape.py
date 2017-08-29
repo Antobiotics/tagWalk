@@ -4,16 +4,16 @@ import re
 import csv
 import json
 
-from random import randint
+import random
 from time import sleep
 
 import urllib2
 import httplib
-import socks
 import socket
 
 import mechanize
 import cookielib
+
 from bs4 import BeautifulSoup
 
 USERNAME = 'pubelle@gmail.com'
@@ -38,30 +38,33 @@ headers = ('User-Agent', user_agent)
 
 
 def find_tags():
-    print "Searching for tags in %s" %(BASE_URL)
+    print("Searching for tags in %s" % (BASE_URL))
     page = urllib2.urlopen(BASE_URL).read()
     soup = BeautifulSoup(page, "lxml")
     soup.prettify()
     for anchor in soup.findAll('a', href=True):
         href = anchor['href']
         tag = TAG_REGEX.match(href)
-        if not tag is None:
+        if tag is not None:
             yield tag.group(1)
 
+
 def save_tags(tags, path=TAG_PATH):
-    print "Saving tags to: %s" %(path)
+    print("Saving tags to: %s" % (path))
     with open(path, 'w') as outfile:
         for t in tags:
             outfile.write(t + '\n')
 
+
 def read_tags(path=TAG_PATH):
-    print "Reading tags from: %s" %(path)
+    print("Reading tags from: %s" % (path))
     tags = []
     with open(path, 'r') as tagfile:
         reader = csv.reader(tagfile, delimiter=',')
         for row in reader:
             tags.append(row[0])
     return tags
+
 
 def get_tags(path=TAG_PATH):
     if not os.path.isfile(path):
@@ -85,6 +88,7 @@ def get_tag_num_results(tag):
         .replace('Result', '')
     )
     return int(nb)
+
 
 def set_browser():
     cj = cookielib.LWPCookieJar()
@@ -131,7 +135,7 @@ class TagWalkCrawler():
                     for key in self.memory:
                         self.memory[key]['done'] = False
         except Exception as e:
-            print e
+            print(e)
             self.memory = {}
 
     def get_unprocessed_tags(self):
@@ -148,7 +152,7 @@ class TagWalkCrawler():
         return unprocessed_tags
 
     def mk_tag_dir(self, tag):
-        tag_path ='/'.join([PICS_DIR, tag])
+        tag_path = '/'.join([PICS_DIR, tag])
         if not os.path.exists(tag_path):
             os.makedirs(tag_path)
         return tag_path
@@ -157,76 +161,96 @@ class TagWalkCrawler():
         self.memory[tag_desc['name']] = tag_desc
         self.save_memory()
 
-
     def fetch_data(self, tag_desc):
         img_counter = 0
 
         nb_results = tag_desc['num_images']
-        while img_counter <= nb_results:
-            url_format = BASE_PHOTOS + tag_desc['name'] + '?page=%s' %(tag_desc['current_page'])
-            print "Fetching %s" %(url_format)
-            page = self.browser.open(url_format).read()
-            soup = BeautifulSoup(page, "lxml")
-            soup.prettify()
+        skip = False
+        if nb_results == 36277 or tag_desc['name'] == 'black-trousers':
+            skip = True
 
-            anchors = soup.findAll('div', {"class": "photoimg"})
-            for anchor in anchors:
-                href = anchor.a['href']
+        if not skip:
+            while img_counter <= nb_results:
+                url_format = (BASE_PHOTOS +
+                              tag_desc['name'] +
+                              '?page=%s' % (tag_desc['current_page'])
+                              )
 
-                image_desc = {
-                    'name': anchor.a.img['alt'],
-                    'href': anchor.a['href'],
-                    'season': href.split('/')[5],
-                    'designer': href.split('/')[6],
-                    'src': anchor.a.img['src'],
-                    'path': '/'.join([tag_desc['local_path'],
-                                      anchor.a.img['alt']])
-                }
+                print("Fetching %s" % (url_format))
+                page = self.browser.open(url_format).read()
+                soup = BeautifulSoup(page, "lxml")
+                soup.prettify()
 
-                processed_src = [image['src'] for image in tag_desc['images']]
-                print "Already processed: %s/%s" %(len(processed_src), nb_results)
-                if not image_desc['src'] in processed_src:
-                    with open(image_desc['path'], 'w') as img_file:
-                        try:
-                            img = self.browser.open(image_desc['src']).read()
-                            img_file.write(img)
-                            img_counter = img_counter + 1
+                anchors = soup.findAll('div', {"class": "photoimg"})
+                for anchor in anchors:
+                    href = anchor.a['href']
 
-                            tag_desc['images'].append(image_desc)
-                            self.update_memory(tag_desc)
+                    image_desc = {
+                        'name': anchor.a.img['alt'],
+                        'href': anchor.a['href'],
+                        'season': href.split('/')[5],
+                        'designer': href.split('/')[6],
+                        'src': anchor.a.img['src'],
+                        'path': '/'.join([tag_desc['local_path'],
+                                          anchor.a.img['alt']])
+                    }
 
-                            sleep_time = randint(0, 3)
-                            print "Sleeping %d" %(sleep_time)
-                            sleep(sleep_time)
+                    processed_src = [
+                        image['src'] for image in tag_desc['images']
+                    ]
 
-                        except httplib.BadStatusLine as e:
-                            print "BAD Status Error: %s" % e
-                            self.update_memory(tag_desc)
+                    print("Already processed: %s/%s" % (
+                        len(processed_src),
+                        nb_results)
+                    )
 
-                        except Exception as e:
-                            print "UNKOWN Error: %s" % e
-                            self.update_memory(tag_desc)
-                            return tag_desc
-                else:
-                    img_counter = img_counter + 1
+                    if not image_desc['src'] in processed_src:
+                        with open(image_desc['path'], 'w') as img_file:
+                            try:
+                                img = (
+                                    self.browser
+                                    .open(image_desc['src'])
+                                    .read()
+                                )
 
-            tag_desc['current_page'] = tag_desc['current_page'] + 1
+                                img_file.write(img)
+                                img_counter = img_counter + 1
+
+                                tag_desc['images'].append(image_desc)
+                                self.update_memory(tag_desc)
+
+                                sleep_time = random.uniform(0, 1)
+                                print("Sleeping %d" % (sleep_time))
+                                sleep(sleep_time)
+
+                            except httplib.BadStatusLine as e:
+                                print("BAD Status Error: %s" % e)
+                                self.update_memory(tag_desc)
+
+                            except Exception as e:
+                                print("UNKOWN Error: %s" % e)
+                                self.update_memory(tag_desc)
+                                return tag_desc
+                    else:
+                        img_counter = img_counter + 1
+
+                tag_desc['current_page'] = tag_desc['current_page'] + 1
 
         tag_desc['done'] = True
         self.update_memory(tag_desc)
         return tag_desc
-
 
     def run(self):
         to_process_tags = self.get_unprocessed_tags()
         for tag_name in to_process_tags:
             tag_path = self.mk_tag_dir(tag_name)
             nb_results = get_tag_num_results(tag_name)
-            print "%s results to collect" %(nb_results)
+            print("%s results to collect" % (nb_results))
 
             tag_descriptor = {
                 'current_page': 1,
                 'done': False,
+                'skipped': False,
                 'name': tag_name,
                 'num_images': nb_results,
                 'local_path': tag_path,
@@ -236,15 +260,14 @@ class TagWalkCrawler():
                 tag_descriptor = self.memory[tag_name]
 
             tag_desc = self.fetch_data(tag_descriptor)
-            print tag_desc
-
+            print(tag_desc)
 
 
 if __name__ == "__main__":
-    crawler = TagWalkCrawler(reset_mem=False)
+    crawler = TagWalkCrawler(reset_mem=True)
     try:
         crawler.run()
     except KeyboardInterrupt:
-        print "Abort!!!! Save Memory First!"
-        print crawler.memory
+        print("Abort!!!! Save Memory First!")
+        # print(crawler.memory)
         crawler.save_memory()

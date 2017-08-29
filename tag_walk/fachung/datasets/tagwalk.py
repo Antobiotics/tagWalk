@@ -31,9 +31,9 @@ DEFAULT_TRANSFORMS = (
     ])
 )
 
+
 class TagwalkDataset(Dataset):
     def __init__(self, csv_path=None, img_path=None, transform=None):
-        print BASE_PATH
         if csv_path is None:
             csv_path = BASE_PATH + '/assocs.csv'
 
@@ -41,7 +41,6 @@ class TagwalkDataset(Dataset):
             img_path = BASE_PATH + 'images/all'
 
         self.reference_dataset = self.read_reference_dataset(csv_path)
-        print self.reference_dataset.head()
 
         self.mlb = MultiLabelBinarizer()
         self.img_path = img_path
@@ -51,6 +50,8 @@ class TagwalkDataset(Dataset):
         self.y_train = self.mlb.fit_transform(
             self.reference_dataset['tags']
         ).astype(np.float32)
+
+        self.num_classes = self.y_train[0].shape[0]
 
     def read_reference_dataset(self, csv_path):
         tmp_df = (
@@ -77,9 +78,11 @@ class TagwalkDataset(Dataset):
     def __len__(self):
         return len(self.X_train.index)
 
-def tagwalk_dataloader():
-    tw_dataset = TagwalkDataset()
-    train_loader = DataLoader(tw_dataset,
+
+def tagwalk_dataloader(dataset=None):
+    if dataset is None:
+        dataset = TagwalkDataset()
+    train_loader = DataLoader(dataset,
                               batch_size=256,
                               shuffle=True,
                               num_workers=4)
