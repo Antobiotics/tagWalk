@@ -26,7 +26,8 @@ setup(
         "fachung.commands",
         "fachung.commands.builders",
         "fachung.preparation",
-        "fachung.datasets"
+        "fachung.datasets",
+        "fachung.models"
     ],
     install_requires=[
         "h5py",

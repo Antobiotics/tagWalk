@@ -72,8 +72,8 @@ class TagwalkDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        label = torch.from_numpy(self.y_train[index])
-        return img, label
+        labels = torch.from_numpy(self.y_train[index])
+        return img, labels
 
     def __len__(self):
         return len(self.X_train.index)
