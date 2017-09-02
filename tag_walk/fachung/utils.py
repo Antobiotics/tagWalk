@@ -40,7 +40,7 @@ def get_train_valid_test_loaders(dataset, batch_size,
     train_dataset = dataset
     valid_dataset = dataset
     test_dataset = dataset
-    test_dataset.transform = None
+    # test_dataset.transform = None
 
     num_train = len(train_dataset)
     indices = list(range(num_train))
