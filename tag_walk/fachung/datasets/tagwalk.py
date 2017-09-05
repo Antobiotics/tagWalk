@@ -60,7 +60,7 @@ class TagwalkDataset(Dataset):
             .apply(list)
         ).reset_index()
         tmp_df.columns = ['image', 'tags']
-        return tmp_df
+        return tmp_df.head()
 
     def __getitem__(self, index):
         item_img_path = '/'.join([
@@ -73,7 +73,7 @@ class TagwalkDataset(Dataset):
             img = self.transform(img)
 
         labels = torch.from_numpy(self.y_train[index])
-        return img, labels
+        return img, labels, item_img_path
 
     def __len__(self):
         return len(self.X_train.index)

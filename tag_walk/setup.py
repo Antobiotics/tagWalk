@@ -40,7 +40,11 @@ setup(
         "keras",
         "pandas",
         "luigi",
-        "scipy"
+        "scipy",
+        "nibabel",
+        "tqdm"
     ],
-    dependency_links=[]
+    dependency_links=[
+        'git+ssh://git@github.com/ncullen93/torchsample.git'
+    ]
 )
