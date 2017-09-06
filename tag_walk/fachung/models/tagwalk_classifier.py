@@ -67,7 +67,7 @@ class TagWalkClassifier():
         self.num_classes = len(self.classes)
 
         if debug:
-            model_id = '__' + 'debug'
+            model_id = 'debug'
         self.model_id = model_id
 
     @property
@@ -78,7 +78,7 @@ class TagWalkClassifier():
     def chk_filename(self):
         return '/'.join([
             self.output_dir,
-            self.model_name + self.model_id + '.pkl'
+            self.model_name + '__' + self.model_id + '.pkl'
         ])
 
     @property
@@ -275,6 +275,6 @@ class TagWalkClassifier():
 if __name__ == "__main__":
     classifier = TagWalkClassifier('data/tag_walk/',
                                    batch_size=4, num_epochs=3,
-                                   debug=True, reset=True)
+                                   debug=False, reset=False, model_id='d3bb959')
     history = classifier.run(training=True)
     # print(history)
