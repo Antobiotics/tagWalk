@@ -1,18 +1,17 @@
-import json
 import numpy as np
+from sklearn.metrics import f1_score
 
 from tqdm import tqdm
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 import torch.optim as optim
 from torch.autograd import Variable
 
 import torchvision
 import torchvision.transforms as transforms
-
-from torchsample.modules import ModuleTrainer
-import torchsample.callbacks as callbacks
 
 import fachung.logger as logger
 from fachung.datasets.tagwalk import TagwalkDataset
@@ -37,12 +36,22 @@ def save_checkpoint(state, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
 
 
+def f1_batch(pred, ground):
+    f1 = np.empty((pred.shape[0], 1), dtype='float32')
+    for i in range(pred.shape[0]):
+        f1[i] = f1_score(ground[i], pred[i])
+    return f1
+
+
 class TagWalkClassifier():
 
     def __init__(self, data_path, batch_size=4, num_epochs=2,
-                 debug=False, reset=False):
+                 debug=False, reset=False, output_dir='./data/training_logs',
+                 model_id=''):
         self.debug = debug
         self.reset = reset
+        self.output_dir = output_dir
+
         self.data_path = data_path
         self.batch_size = batch_size
         self.num_epochs = num_epochs
@@ -54,10 +63,12 @@ class TagWalkClassifier():
         )
 
         self._model = self.build_model()
+        self.classes = self.dataset.mlb.classes_
+        self.num_classes = len(self.classes)
 
-    @property
-    def output_dir(self):
-        return './data/training_logs'
+        if debug:
+            model_id = '__' + 'debug'
+        self.model_id = model_id
 
     @property
     def model_name(self):
@@ -67,16 +78,8 @@ class TagWalkClassifier():
     def chk_filename(self):
         return '/'.join([
             self.output_dir,
-            self.model_name + '.pkl'
+            self.model_name + self.model_id + '.pkl'
         ])
-
-    @property
-    def callbacks(self):
-        return [
-            callbacks.EarlyStopping(monitor='val_loss', patience=5),
-            callbacks.ModelCheckpoint(directory='./data/trainer_logs'),
-            callbacks.CSVLogger('./data/trainer_logs/tw_history.csv')
-        ]
 
     @property
     def model(self):
@@ -102,8 +105,12 @@ class TagWalkClassifier():
             'num_epoch': self.num_epochs,
             'loss': [],
             'val_loss': [],
+            'f1': [],
             'loss_epoch': [],
-            'val_loss_epoch': []
+            'val_loss_epoch': [],
+            'f1_epoch': [],
+            'val_f1': [],
+            'val_f1_epoch': []
         }
 
     def read_model(self):
@@ -120,7 +127,7 @@ class TagWalkClassifier():
         )
 
     def build_model(self):
-        model = torchvision.models.resnet18(pretrained=True)
+        model = torchvision.models.resnet50(pretrained=True)
         num_classes = self.dataset.num_classes
         model.fc = nn.Linear(model.fc.in_features, num_classes)
         return model
@@ -128,25 +135,29 @@ class TagWalkClassifier():
     def split_dataset(self):
         return get_train_valid_test_loaders(self.dataset, self.batch_size, 42)
 
-    def build_trainer(self):
-        trainer = ModuleTrainer(self.model)
-        trainer.compile(loss='multilabel_soft_margin_loss',
-                        optimizer='adadelta')
-        return trainer
-
     def show_debug(self, output, target, img_path):
         output_mat = output.data.cpu().numpy()
         target_mat = target.data.cpu().numpy()
-
-        for batch_id in range(self.batch_size):
-            max_idx = np.argpartition(output_mat[batch_id], 5)[:5]
+        for batch_id in range(output_mat.shape[0]):
+            print(batch_id)
+            max_idx = np.argpartition(output_mat[batch_id], 10)[:10]
             print("IMG: %s \n Predicted: %s \n Truth: %s" % (
                 img_path[batch_id],
-                self.dataset.mlb.classes_[max_idx],
-                self.dataset.mlb.classes_[
+                self.classes[max_idx],
+                self.classes[
                     np.where(target_mat[batch_id] == 1)
                 ])
             )
+
+    def update_metrics(self, output, target, mode='training'):
+        output_mat = F.sigmoid(output).data.cpu().numpy()
+        target_mat = target.data.cpu().numpy()
+        f1_score = f1_batch(target_mat, output_mat.round())
+        key = 'f1'
+        if mode != 'training':
+            key = '_'.join([mode, key])
+        self.history[key].append(f1_score)
+        return f1_score
 
     def train(self, epoch):
         dataset = iter(self.train_loader)
@@ -155,15 +166,21 @@ class TagWalkClassifier():
         self.model.train(True)
 
         losses = []
+        f1_scores = []
         for input_image, target, img_path in pbar:
             image = Variable(input_image)
             target = Variable(target)
 
+            self.optimiser.zero_grad()
             output = self.model(image)
             loss = self.criterion(output, target)
 
             if self.debug:
                 self.show_debug(output, target, img_path)
+
+            f1_score = self.update_metrics(output, target, mode='training')
+            f1_scores.append(f1_score)
+            mean_f1 = np.mean(np.array(f1_scores))
 
             loss.backward()
             self.optimiser.step()
@@ -172,21 +189,27 @@ class TagWalkClassifier():
             losses.append(loss_value)
             mean_loss = np.mean(np.array(losses))
 
+            desc_fmt = 'Epoch: {}; Loss: {:.5f}; Avg: {:.5f}; F1: {:.5f}'
             (
                 pbar
-                .set_description('Epoch: {}; Loss: {:.5f}; Avg: {:.5f}'.format(
-                    epoch + 1, loss_value, mean_loss))
+                .set_description(desc_fmt.format(epoch + 1,
+                                                 loss_value,
+                                                 mean_loss,
+                                                 mean_f1))
             )
+
             self.history['loss'].append(loss_value)
-        self.history['loss_epoch'].append(np.mean(np.array(losses)))
+        self.history['loss_epoch'].append(mean_loss)
+        self.history['f1_epoch'].append(mean_f1)
 
     def validate(self, epoch):
         dataset = iter(self.validation_loader)
         pbar = tqdm(dataset)
 
-        self.model.train(False)
+        self.model.eval()
 
         losses = []
+        f1_scores = []
         for i, val_data in enumerate(pbar):
             image = Variable(val_data[0])
             target = Variable(val_data[1])
@@ -194,19 +217,26 @@ class TagWalkClassifier():
             output = self.model(image)
             val_loss = self.criterion(output, target)
             val_loss_value = val_loss.data[0]
-
             losses.append(val_loss_value)
+
+            self.show_debug(F.sigmoid(output), target, val_data[2])
             self.history['val_loss'].append(val_loss_value)
 
+            f1_score = self.update_metrics(output, target, mode='val')
+            f1_scores.append(f1_score)
+
         mean_val_loss = np.mean(np.array(losses))
+        mean_f1 = np.mean(np.array(f1_scores))
+
         if self.must_save(mean_val_loss):
-            # torch.save(self.model.state_dict(), self.chk_filename)
+            logger.INFO("Saving for validation loss %s" % (mean_val_loss))
             save_checkpoint({
                 'history': self.history,
                 'state_dict': self.model.state_dict()
             }, filename=self.chk_filename)
 
         self.history['val_loss_epoch'].append(mean_val_loss)
+        self.history['val_f1_epoch'].append(mean_f1)
 
     def must_save(self, loss):
         return (
@@ -226,7 +256,7 @@ class TagWalkClassifier():
                 self.init_history()
 
         start_epoch = self.history['current_epoch']
-        pbar = tqdm(range(start_epoch, self.num_epochs))
+        pbar = tqdm(range(start_epoch, self.num_epochs + 1))
 
         for epoch in pbar:
             self.train(epoch)
@@ -244,7 +274,7 @@ class TagWalkClassifier():
 
 if __name__ == "__main__":
     classifier = TagWalkClassifier('data/tag_walk/',
-                                   batch_size=4, num_epochs=2,
-                                   debug=False, reset=False)
+                                   batch_size=4, num_epochs=3,
+                                   debug=True, reset=True)
     history = classifier.run(training=True)
-    print(history)
+    # print(history)
