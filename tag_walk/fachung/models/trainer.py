@@ -110,7 +110,7 @@ class Trainer():
             self.history['metrics'][m_name].appen(metrics[m_name])
 
     def must_save(self, epoch, loss):
-        losses_df = pd.DataFrame({'loss': self.history['val_loss']})
+        losses_df = pd.DataFrame({'loss': self.history['metrics']['val_loss']})
         losses_df['index'] = losses_df.index
         means = losses_df['loss'].rolling(self.batch_size).mean().tolist()
         return (

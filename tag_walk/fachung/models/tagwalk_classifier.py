@@ -118,6 +118,11 @@ class TagWalkClassifier(Trainer):
         output = self.model(image)
         loss = self.criterion(output, target)
 
+        loss_key = 'loss'
+        if mode == 'validation':
+            loss_key = 'val_' + loss_key
+        self.history['metrics'][loss_key].append(loss.data[0])
+
         return output, loss, {}
 
     def update_metrics(self, output, target, mode='training'):
