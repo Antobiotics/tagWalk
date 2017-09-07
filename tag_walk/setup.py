@@ -30,6 +30,7 @@ setup(
         "fachung.models"
     ],
     install_requires=[
+        "numpy",
         "h5py",
         "sklearn",
         "click",
