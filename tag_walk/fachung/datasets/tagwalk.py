@@ -60,8 +60,8 @@ class TagwalkDataset(Dataset):
             .apply(list)
         ).reset_index()
         tmp_df.columns = ['image', 'tags']
-        return tmp_df
-        # return tmp_df.head(n=300)
+        # return tmp_df
+        return tmp_df.head(n=300)
 
     def get_image(self, index):
         item_img_path = '/'.join([

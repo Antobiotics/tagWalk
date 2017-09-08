@@ -72,8 +72,19 @@ class Trainer():
         logger.INFO("Trying to load %s" % (self.chk_filename))
         checkpoint = torch.load(self.chk_filename)
         for model in self.model:
-            self.model['model'].load_state_dict(checkpoint['state_dict'])
+            self.model[model].load_state_dict(checkpoint['state_dict'][model])
         self.history = checkpoint['history']
+
+    def save_model(self):
+        checkpoint = {
+            'history': self.history,
+            'state_dict': {}
+        }
+
+        for model in self.model:
+            checkpoint['state_dict'][model] = self.model[model].state_dict()
+
+        save_checkpoint(checkpoint, filename=self.chk_filename)
 
     def build_model(self):
         raise RuntimeError("build_model must be implemented")
@@ -198,10 +209,7 @@ class Trainer():
         mean_loss = np.mean(np.array(losses))
         if self.must_save(epoch, mean_loss):
             logger.INFO("Saving for validation loss %s" % (mean_loss))
-            save_checkpoint({
-                'history': self.history,
-                'state_dict': self.model.state_dict()
-            }, filename=self.chk_filename)
+            self.save_model()
 
     def fit(self):
         self.init()
