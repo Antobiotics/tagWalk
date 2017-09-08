@@ -20,4 +20,3 @@ def cli(ctx, df, labels, images):
     prep.prepare(df=df,
                  labels=labels,
                  images=images)
-

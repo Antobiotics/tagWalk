@@ -29,10 +29,13 @@ class Trainer():
             model_id = 'debug'
         self.model_id = model_id
 
+        self.options = self.config.get('options', {})
+
         self.dataset = self.build_dataset()
         self._model = self.build_model()
 
         self.loader_dict = self.split_dataset()
+        self.learning_rate = self.config.get('learning_rate', 0.0001)
 
     @property
     def model_name(self):
@@ -68,7 +71,8 @@ class Trainer():
     def read_model(self):
         logger.INFO("Trying to load %s" % (self.chk_filename))
         checkpoint = torch.load(self.chk_filename)
-        self.model.load_state_dict(checkpoint['state_dict'])
+        for model in self.model:
+            self.model['model'].load_state_dict(checkpoint['state_dict'])
         self.history = checkpoint['history']
 
     def build_model(self):
@@ -79,6 +83,18 @@ class Trainer():
 
     def split_dataset(self):
         raise RuntimeError("split_dataset must be implemented")
+
+    def set_train(self):
+        for model in self.model:
+            self.model[model].train(True)
+
+    def set_eval(self):
+        for model in self.model:
+            self.model[model].eval()
+
+    def zero_grad_model(self):
+        for model in self.model:
+            self.model[model].zero_grad()
 
     def init(self):
         if self.reset:
@@ -134,15 +150,22 @@ class Trainer():
     def on_batch_data(self, batch_data, mode):
         pass
 
+    def update_loss_history(self, loss, mode):
+        loss_key = 'loss'
+        if mode == 'validation':
+            loss_key = 'val_' + loss_key
+        self.history['metrics'][loss_key].append(loss.data[0])
+
     def train(self, epoch):
         dataset = iter(self.loader_dict['training'])
         pbar = tqdm(dataset)
 
-        self.model.train(True)
+        self.set_train()
 
         losses = []
         for _, batch_data in enumerate(pbar):
             self.optimiser.zero_grad()
+            self.zero_grad_model()
 
             _ , loss, metrics = self.on_batch_data(batch_data,
                                                    mode='training')
@@ -162,7 +185,7 @@ class Trainer():
         dataset = iter(self.loader_dict['validation'])
         pbar = tqdm(dataset)
 
-        self.model.eval()
+        self.set_eval()
 
         losses = []
         for _, batch_data in enumerate(pbar):
