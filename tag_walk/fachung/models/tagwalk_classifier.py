@@ -11,25 +11,10 @@ import torch.optim as optim
 from torch.autograd import Variable
 
 import torchvision
-import torchvision.transforms as transforms
 
-import fachung.logger as logger
 from fachung.datasets.tagwalk import TagwalkDataset
-from fachung.utils import get_train_valid_test_loaders
+from fachung.utils import get_train_valid_test_loaders, DEFAULT_TRANSFORMS
 from fachung.models.trainer import Trainer
-
-NORMALIZE = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-
-DEFAULT_TRANSFORMS = (
-    transforms.Compose([
-        # transforms.RandomSizedCrop(224),
-        # transforms.RandomHorizontalFlip(),
-        transforms.Scale((224, 224)),
-        transforms.ToTensor(),
-        NORMALIZE
-    ])
-)
 
 
 def f1_batch(pred, ground):
@@ -41,12 +26,12 @@ def f1_batch(pred, ground):
 
 BASIC_CONFIG = {
     'batch_size': 4,
-    'num_epochs': 2,
+    'num_epochs': 7,
     'output_dir': './data/training_logs',
-    'debug': True,
+    'debug': False,
     'reset': False,
     'data_path': 'data/tag_walk/',
-    'model_id': "ttttt"
+    'model_id': "306feb6"
 }
 
 class TagWalkClassifier(Trainer):
@@ -66,7 +51,9 @@ class TagWalkClassifier(Trainer):
 
     @property
     def optimiser(self):
-        return optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
+        return optim.SGD(self.model['model'].parameters(),
+                         lr=self.learning_rate,
+                         momentum=0.9)
 
     def build_dataset(self):
         return TagwalkDataset(
@@ -79,7 +66,7 @@ class TagWalkClassifier(Trainer):
         model = torchvision.models.resnet50(pretrained=True)
         num_classes = self.dataset.num_classes
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-        return model
+        return {'model': model}
 
     def split_dataset(self):
         train_loader, validation_loader, testing_loader = (
@@ -97,7 +84,7 @@ class TagWalkClassifier(Trainer):
         target = Variable(batch_data[1])
         img_path = batch_data[2]
 
-        output = self.model(image)
+        output = self.model['model'](image)
 
         output_mat = output.data.cpu().numpy()
         target_mat = target.data.cpu().numpy()
@@ -115,13 +102,10 @@ class TagWalkClassifier(Trainer):
         image = Variable(batch_data[0])
         target = Variable(batch_data[1])
 
-        output = self.model(image)
+        output = self.model['model'](image)
         loss = self.criterion(output, target)
 
-        loss_key = 'loss'
-        if mode == 'validation':
-            loss_key = 'val_' + loss_key
-        self.history['metrics'][loss_key].append(loss.data[0])
+        self.update_loss_history(loss, mode)
 
         return output, loss, {}
 

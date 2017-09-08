@@ -1,0 +1,9 @@
+{
+  "batch_size": 4,
+  "num_epochs": 7,
+  "output_dir": "./data/training_logs",
+  "debug": false,
+  "reset": false,
+  "data_path": "data/tag_walk/",
+  "model_id": "ttt"
+}

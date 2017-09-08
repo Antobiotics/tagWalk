@@ -27,7 +27,7 @@ pass_context = click.make_pass_decorator(Context, ensure=True)
 COMMANDS_FOLDER = os.path.join(os.path.dirname(__file__), '.')
 
 
-class TagWalkCommand(click.MultiCommand):
+class FachungCommand(click.MultiCommand):
     @property
     def sub_folder(self):
         raise RuntimeError("Missing Property: sub_folder")
@@ -66,7 +66,13 @@ class TagWalkCommand(click.MultiCommand):
         return mod.cli
 
 
-class BuilderCommand(TagWalkCommand):
+class BuilderCommand(FachungCommand):
     @property
     def sub_folder(self):
         return 'builders'
+
+
+class ModelingCommand(FachungCommand):
+    @property
+    def sub_folder(self):
+        return 'modeling'
