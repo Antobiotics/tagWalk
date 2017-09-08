@@ -13,14 +13,21 @@ NORMALIZE = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 
 DEFAULT_TRANSFORMS = (
     transforms.Compose([
-        # transforms.RandomSizedCrop(224),
-        # transforms.RandomHorizontalFlip(),
+        transforms.RandomSizedCrop(224),
+        transforms.RandomHorizontalFlip(),
         transforms.Scale((224, 224)),
         transforms.ToTensor(),
         NORMALIZE
     ])
 )
 
+TEST_TRANSFORMS = (
+    transforms.Compose([
+        transforms.Scale((224, 224)),
+        transforms.ToTensor(),
+        NORMALIZE
+    ])
+)
 
 def split_dataset(inputs, labels):
     test_size = inputs.shape[0] // 3
@@ -57,7 +64,7 @@ def get_train_valid_test_loaders(dataset, batch_size,
     train_dataset = dataset
     valid_dataset = dataset
     test_dataset = dataset
-    # test_dataset.transform = None
+    test_dataset.transform = TEST_TRANSFORMS
 
     num_train = len(train_dataset)
     indices = list(range(num_train))

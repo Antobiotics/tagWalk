@@ -10,17 +10,6 @@ from fachung.models.tagwalk_cnn_rnn import TagWalkCNNRNN
 from fachung.models.tagwalk_classifier import TagWalkClassifier
 
 
-BASIC_CONFIG = {
-    'batch_size': 4,
-    'num_epochs': 7,
-    'output_dir': './data/training_logs',
-    'debug': False,
-    'reset': False,
-    'data_path': 'data/tag_walk/',
-    'model_id': "306feb6"
-}
-
-
 @click.command('tagwalk', short_help="TagWalk Models")
 @click.option('--model', type=click.Choice(['cnn', 'cnn-rnn']))
 @click.option('--config')

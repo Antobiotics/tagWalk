@@ -60,8 +60,8 @@ class TagwalkDataset(Dataset):
             .apply(list)
         ).reset_index()
         tmp_df.columns = ['image', 'tags']
-        # return tmp_df
-        return tmp_df.head(n=300)
+        return tmp_df
+        # return tmp_df.head(n=300)
 
     def get_image(self, index):
         item_img_path = '/'.join([
@@ -89,8 +89,8 @@ class TagwalkDataset(Dataset):
 class TagwalkSequenceDataset(TagwalkDataset):
     def get_labels(self, index):
         tw_one_hot = self.y_train[index]
-        tag_idx = np.where(tw_one_hot == 1)[0]
-        return tag_idx
+        tag_idx = np.where(tw_one_hot == 1)[0].tolist()
+        return torch.Tensor(tag_idx)
 
     def __getitem__(self, index):
         img, _ = self.get_image(index)
@@ -103,15 +103,15 @@ def collate_sequence_data(data):
     """
     # Order batch by decreasing length
     data.sort(key=lambda x: len(x[1]), reverse=True)
-    images, labels = zip(*data)
+    images, captions = zip(*data)
 
     images = torch.stack(images, 0)
-    lengths = [len(label) for label in labels]
-    targets = torch.zeros(len(labels), max(lengths)).long()
+    lengths = [len(cap) for cap in captions]
+    targets = torch.zeros(len(captions), max(lengths)).long()
 
-    for i, target in enumerate(targets):
+    for i, cap in enumerate(captions):
         end = lengths[i]
-        targets[i, :end] = target[:end]
+        targets[i, :end] = cap[:end]
     return images, targets, lengths
 
 
