@@ -1,9 +1,15 @@
 {
   "batch_size": 4,
-  "num_epochs": 7,
-  "output_dir": "./data/training_logs",
+  "num_epochs": 2,
+  "output_dir": "data/training_logs",
   "debug": false,
   "reset": false,
   "data_path": "data/tag_walk/",
-  "model_id": "ttt"
+  "model_id": "5bea3b8_params",
+  "options": {
+     "embedding_size": 256,
+     "hidden_size": 512,
+     "num_layers": 8,
+     "learning_rate": 0.00001
+  }
 }
