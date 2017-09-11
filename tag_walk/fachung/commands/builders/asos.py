@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import click
 
-import fachung.logger as l
+import fachung.logger as logger
 
 from fachung.preparation.asos import Asos
 from fachung.commands.cli import pass_context
@@ -15,9 +15,8 @@ from fachung.commands.cli import pass_context
 @pass_context
 def cli(ctx, df, labels, images):
 
-    l.INFO("Preparing ASOS data")
+    logger.INFO("Preparing ASOS data")
     prep = Asos()
     prep.prepare(df=df,
                  labels=labels,
                  images=images)
-

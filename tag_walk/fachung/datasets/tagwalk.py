@@ -61,8 +61,9 @@ class TagwalkDataset(Dataset):
         ).reset_index()
         tmp_df.columns = ['image', 'tags']
         return tmp_df
+        # return tmp_df.head(n=300)
 
-    def __getitem__(self, index):
+    def get_image(self, index):
         item_img_path = '/'.join([
             self.img_path,
             self.X_train[index]
@@ -71,12 +72,47 @@ class TagwalkDataset(Dataset):
         img = img.convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
+        return img, item_img_path
 
-        label = torch.from_numpy(self.y_train[index])
-        return img, label
+    def get_labels(self, index):
+        return torch.from_numpy(self.y_train[index])
+
+    def __getitem__(self, index):
+        img, item_img_path = self.get_image(index)
+        labels = self.get_labels(index)
+        return img, labels, item_img_path
 
     def __len__(self):
         return len(self.X_train.index)
+
+
+class TagwalkSequenceDataset(TagwalkDataset):
+    def get_labels(self, index):
+        tw_one_hot = self.y_train[index]
+        tag_idx = np.where(tw_one_hot == 1)[0].tolist()
+        return torch.Tensor(tag_idx)
+
+    def __getitem__(self, index):
+        img, _ = self.get_image(index)
+        labels = self.get_labels(index)
+        return img, labels
+
+
+def collate_sequence_data(data):
+    """ Ensure all sequences have same length in the current batch
+    """
+    # Order batch by decreasing length
+    data.sort(key=lambda x: len(x[1]), reverse=True)
+    images, captions = zip(*data)
+
+    images = torch.stack(images, 0)
+    lengths = [len(cap) for cap in captions]
+    targets = torch.zeros(len(captions), max(lengths)).long()
+
+    for i, cap in enumerate(captions):
+        end = lengths[i]
+        targets[i, :end] = cap[:end]
+    return images, targets, lengths
 
 
 def tagwalk_dataloader(dataset=None):
