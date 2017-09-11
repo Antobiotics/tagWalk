@@ -26,9 +26,11 @@ setup(
         "fachung.commands",
         "fachung.commands.builders",
         "fachung.preparation",
-        "fachung.datasets"
+        "fachung.datasets",
+        "fachung.models"
     ],
     install_requires=[
+        "numpy",
         "h5py",
         "sklearn",
         "click",
@@ -39,7 +41,11 @@ setup(
         "keras",
         "pandas",
         "luigi",
-        "scipy"
+        "scipy",
+        "nibabel",
+        "tqdm"
     ],
-    dependency_links=[]
+    dependency_links=[
+        'git+ssh://git@github.com/ncullen93/torchsample.git'
+    ]
 )
