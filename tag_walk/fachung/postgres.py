@@ -33,10 +33,9 @@ class PostgreSQLConnection(object):
                 user=self.get_user(),
                 password=self.get_password())
             connection.set_client_encoding('utf-8')
+            self.connection = connection
         except psycopg2.Error as e:
             l.ERROR(e)
-
-        self.connection = connection
 
     @abc.abstractproperty
     def instance(self):
