@@ -32,6 +32,7 @@ setup(
     install_requires=[
         "numpy",
         "h5py",
+        "psycopg2",
         "sklearn",
         "click",
         "coloredlogs",
