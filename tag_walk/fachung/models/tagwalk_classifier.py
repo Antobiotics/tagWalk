@@ -12,8 +12,10 @@ from torch.autograd import Variable
 
 import torchvision
 
+import fachung.transforms as transforms
+
 from fachung.datasets.tagwalk import TagwalkDataset
-from fachung.utils import get_train_valid_test_loaders, DEFAULT_TRANSFORMS
+from fachung.utils import get_train_valid_test_loaders
 from fachung.models.trainer import Trainer
 
 
@@ -59,7 +61,7 @@ class TagWalkClassifier(Trainer):
         return TagwalkDataset(
             csv_path=self.data_path + 'assocs.csv',
             img_path=self.data_path + 'images/all',
-            transform=DEFAULT_TRANSFORMS
+            transform=transforms.DEFAULT_TRANSFORMS
         )
 
     def build_model(self):
