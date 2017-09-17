@@ -10,6 +10,7 @@ import torchvision.models as models
 
 import fachung.datasets.tagwalk as tw_data
 import fachung.utils as utils
+import fachung.transforms as transforms
 
 from fachung.models.trainer import Trainer
 
@@ -114,7 +115,7 @@ class TagWalkCNNRNN(Trainer):
         return tw_data.TagwalkSequenceDataset(
             csv_path=self.data_path + 'assocs.csv',
             img_path=self.data_path + 'images/all',
-            transform=utils.DEFAULT_TRANSFORMS
+            transform=transforms.DEFAULT_TRANSFORMS
         )
 
     def build_model(self):

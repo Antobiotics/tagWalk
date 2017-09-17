@@ -7,7 +7,6 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import MultiLabelBinarizer
-import torchvision.transforms as transforms
 
 from PIL import Image
 
@@ -17,18 +16,6 @@ BASE_PATH = (
     conf.BASE_DATA +
     conf.get_config()
     .get(conf.MODE, 'tag_walk')
-)
-
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-
-DEFAULT_TRANSFORMS = (
-    transforms.Compose([
-        transforms.RandomSizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize
-    ])
 )
 
 
