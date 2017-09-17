@@ -56,14 +56,20 @@ def clean_item_category(cat):
         return cat
 
 def str_to_array(s):
-    return (
-        s.replace('[', '')
-        .replace(']', '')
-        .replace("'", '')
-        .replace('"', '')
-        .replace(" ", '')
-        .split(',')
-    )
+    try:
+        return (
+            s.replace('[', '')
+            .replace(']', '')
+            .replace("'", '')
+            .replace('"', '')
+            .replace(" ", '')
+            .split(',')
+        )
+    except AttributeError:
+        return []
+
+def build_attributes(row):
+    return row.color
 
 class Asos(AsosConnection):
     """
@@ -76,12 +82,13 @@ class Asos(AsosConnection):
 
     def __init__(self, build=True, readable_labels=False):
         super(Asos, self).__init__()
-        self.df = None
         self.labels = None
 
         if build:
             self.labels = self.build_labels()
             self.df = self.build()
+        else:
+            self.df = self.read_asos_df()
 
     @property
     def output_dir(self):
@@ -96,6 +103,14 @@ class Asos(AsosConnection):
             self.output_dir,
             'asos.csv'
         ])
+
+    @property
+    def unstring_columns(self):
+        return [
+            'images',
+            'tags',
+            'cat1'
+        ]
 
     def get_brands(self):
         df = self.get_table_as_pandas('public', 'brand')
@@ -183,8 +198,19 @@ class Asos(AsosConnection):
         self.image_statuses_df = misses_df
 
     def read_asos_df(self):
-        df = pd.read_csv(self.asos_path)
-        df['images'] = df['images'].apply(str_to_array)
+        df = pd.read_csv(self.asos_path).drop_duplicates()
+
+        for col in self.unstring_columns:
+            df[col] = df[col].apply(str_to_array)
+
+        df['attributes'] = df['cat1'] + df['tags']
+        # df['attributes'] = df.apply(lambda x: x['color'])
+
+        def clean_attibutes(x):
+            return list(set([i.lower() for i in x]))
+
+        df['attributes'] = df['attributes'].apply(clean_attibutes)
+
         return df
 
     def prepare(self, df=True, labels=True, images=True, reset=False):

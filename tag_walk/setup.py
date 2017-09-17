@@ -44,7 +44,8 @@ setup(
         "luigi",
         "scipy",
         "nibabel",
-        "tqdm"
+        "tqdm",
+        "execute"
     ],
     dependency_links=[
         'git+ssh://git@github.com/ncullen93/torchsample.git'
