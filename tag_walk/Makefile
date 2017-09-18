@@ -3,8 +3,7 @@ setup: clean
 	python3 setup.py develop
 
 dependencies-others:
-	pip3 install h5py
-	pip3 intall luigi
+	./lib/setup_requires.py
 
 # Macosx, no cuda
 dependencies-cpu: dependencies-others

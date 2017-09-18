@@ -1,4 +1,5 @@
 from luigi.contrib.s3 import S3Client
+from luigi.contrib.s3 import S3Target
 
 import fachung.configuration as conf
 
