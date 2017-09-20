@@ -1,7 +1,6 @@
 provider "aws" {
-    profile = "personal"
+    profile = "fachung"
     region = "eu-west-1"
-    version = "~> 0.1"
 }
 
 
@@ -35,12 +34,16 @@ resource "aws_security_group" "jupyter_notebook_sg" {
 
 resource "aws_instance" "Fachung" {
     count = 1
+    availability_zone = "eu-west-1b"
     ami = "ami-a8d2d7ce"
-    instance_type = "m4.xlarge"
-    key_name = "fachung"
+    instance_type = "t2.nano"
+    # instance_type = "p2.xlarge"
+    key_name = "fachung.pem"
+
     tags {
         Name = "Fachung"
     }
+
     vpc_security_group_ids = ["${aws_security_group.jupyter_notebook_sg.id}"]
 
     provisioner "file" {
@@ -55,8 +58,8 @@ resource "aws_instance" "Fachung" {
     }
 
     provisioner "file" {
-        source      = "${file("~/.aws/fachung_credentials")}"
-        destination = "/home/ubuntu/.aws/credentials"
+        source      = "credentials"
+        destination = "~/.aws/credentials"
 
         connection {
             type     = "ssh"
@@ -77,24 +80,44 @@ resource "aws_instance" "Fachung" {
         }
 
     }
-
 }
 
 
 resource "aws_ebs_volume" "FachungData" {
-  availability_zone = "eu-west-1"
-  size              = 1
+    availability_zone = "eu-west-1b"
+    size              = 1
+
+    tags {
+        Name = "FachungData"
+    }
+
+    lifecycle {
+        prevent_destroy = true
+    }
 }
 
 
 resource "aws_volume_attachment" "ebs_att" {
-  device_name = "/dev/sdh"
-  volume_id   = "${aws_ebs_volume.FachungData.id}"
-  instance_id = "${aws_instance.Fachung.id}"
+    skip_destroy = true
+    device_name = "/dev/sdh"
+    volume_id   = "${aws_ebs_volume.FachungData.id}"
+    instance_id = "${aws_instance.Fachung.id}"
+
+    provisioner "remote-exec" {
+        scripts = [
+            "${path.module}/attach-data-volume.sh"
+        ]
+        connection {
+            host     = "${aws_instance.Fachung.public_ip}"
+            type     = "ssh"
+            user     = "ubuntu"
+            private_key = "${file("~/.aws/fachung.pem")}"
+        }
+    }
 }
 
 
 output "node_dns_name" {
-    value = "${aws_instance.Node.public_dns}"
+    value = "${aws_instance.Fachung.public_dns}"
 }
 
