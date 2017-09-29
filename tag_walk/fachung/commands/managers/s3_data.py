@@ -37,9 +37,18 @@ def clean_archive(archive):
     command = "rm %s" % (archive)
     _ = _execute(command)
 
-def sync_data(data_dir):
+def sync_to_s3_data(data_dir):
     command = """
     aws s3 sync {data_dir} s3://fachung/data/ --profile fachung
+    """.format(data_dir=data_dir)
+    res = _execute(command)
+    if res is None:
+        raise RuntimeError("Unable to sync data")
+
+
+def sync_from_s3_data(data_dir):
+    command = """
+    aws s3 sync s3://fachung/data/ {data_dir} --profile fachung
     """.format(data_dir=data_dir)
     res = _execute(command)
     if res is None:
@@ -49,12 +58,13 @@ def sync_data(data_dir):
 @click.command('tagwalk', short_help="TagWalk Models")
 @click.option('--package/--not-package', default=False)
 @click.option('--push/--not-push', default=False)
+@click.option('--pull/--not-pull', default=False)
 @click.option('--clean/--not-clean', default=False)
 @click.option('--sync/--not-sync', default=False)
 @click.option('--archive_name', default='data.tar.gz')
 @click.option('--data_dir', default='./data')
 @pass_context
-def cli(ctx, package, push, clean, sync, archive_name, data_dir):
+def cli(ctx, package, push, pull, clean, sync, archive_name, data_dir):
     logger.INFO("Managing Project data")
 
     data_dir = configuration.BASE_DATA
@@ -69,5 +79,8 @@ def cli(ctx, package, push, clean, sync, archive_name, data_dir):
     if clean:
         clean_archive(archive_name)
 
-    if sync:
-        sync_data(data_dir)
+    if sync and push:
+        sync_to_s3_data(data_dir)
+
+    if sync and pull:
+        sync_from_s3_data(data_dir)
