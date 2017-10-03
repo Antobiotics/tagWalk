@@ -1,5 +1,8 @@
 import numpy as np
 
+import torch
+import torch.autograd as autograd
+
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -7,6 +10,26 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import fachung.transforms as transforms
 from sklearn.model_selection import train_test_split
 
+USE_CUDA = torch.cuda.is_available()
+
+
+def Variable(data, *args, **kwargs):
+    var = autograd.Variable(data, *args, **kwargs)
+    if USE_CUDA:
+        var = var.cuda()
+    return var
+
+def from_numpy(ndarray):
+    tensor = torch.from_numpy(ndarray).float()
+    if USE_CUDA:
+        tensor = tensor.cuda()
+    return tensor
+
+def to_tensor(array):
+    tensor = torch.Tensor(array).float()
+    if USE_CUDA:
+        tensor = tensor.cuda()
+    return tensor
 
 def split_dataset(inputs, labels):
     test_size = inputs.shape[0] // 3

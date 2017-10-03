@@ -1,8 +1,8 @@
 
 import torch.nn as nn
-from torch.autograd import Variable
-
 import torchvision.models as models
+
+from fachung.utils import Variable
 
 
 class SiameseNetwork(nn.Module):
