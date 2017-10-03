@@ -5,6 +5,7 @@ from tqdm import tqdm
 import torch
 
 import fachung.logger as logger
+from utils import USE_CUDA
 
 
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
@@ -32,14 +33,27 @@ class Trainer():
         self.options = self.config.get('options', {})
 
         self.dataset = self.build_dataset()
-        self._model = self.build_model()
+        self._model = self._build_model()
 
         self.loader_dict = self.split_dataset()
         self.learning_rate = self.config.get('learning_rate', 0.0001)
 
     @property
+    def use_cuda(self):
+        return USE_CUDA
+
+    @property
+    def use_cuda_str(self):
+        if self.use_cuda:
+            return '__cuda'
+        return '__no_cuda'
+
+    @property
     def model_name(self):
-        return self.__class__.__name__
+        return (
+            self.__class__.__name__ +
+            self.use_cuda_str
+        )
 
     @property
     def chk_filename(self):
@@ -85,6 +99,13 @@ class Trainer():
             checkpoint['state_dict'][model] = self.model[model].state_dict()
 
         save_checkpoint(checkpoint, filename=self.chk_filename)
+
+    def _build_model(self):
+        built_models = self.build_model()
+        if self.use_cuda:
+            for model in built_models:
+                model.cuda()
+        return built_models
 
     def build_model(self):
         raise RuntimeError("build_model must be implemented")

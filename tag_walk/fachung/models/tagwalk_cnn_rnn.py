@@ -4,8 +4,6 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence
 
-from torch.autograd import Variable
-
 import torchvision.models as models
 
 import fachung.datasets.tagwalk as tw_data
@@ -13,6 +11,7 @@ import fachung.utils as utils
 import fachung.transforms as transforms
 
 from fachung.models.trainer import Trainer
+from fachung.utils import Variable
 
 
 class EncoderCNN(nn.Module):
