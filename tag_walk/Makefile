@@ -17,7 +17,7 @@ dependencies-gpu: dependencies-others
 	pip3 install torchvision
 
 install: clean
-	python3 setup.py install
+	python3 setup.py develop
 
 clean:
 	rm -rf env
