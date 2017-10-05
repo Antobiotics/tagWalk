@@ -103,4 +103,4 @@ ENV/
 notebooks/logs/
 *.h5
 *.csv
-
+fachung.cfg
