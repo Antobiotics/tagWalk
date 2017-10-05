@@ -5,7 +5,7 @@ from tqdm import tqdm
 import torch
 
 import fachung.logger as logger
-from utils import USE_CUDA
+from fachung.utils import USE_CUDA
 
 
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
