@@ -25,6 +25,8 @@ mkdir -p ~/dev && cd ~/dev || exit 1
 aws s3 cp s3://fachung/archives/fachung.tar.gz . --profile='fachung'
 tar -xzvf fachung.tar.gz
 
+cp /tmp/fachung.cfg ~/dev/fachung.cfg
+
 echo "Installing fachung"
 ls
 sudo make setup

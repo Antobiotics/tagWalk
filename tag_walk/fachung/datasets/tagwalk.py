@@ -11,7 +11,8 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from PIL import Image
 
 import fachung.configuration as conf
-from utils import from_numpy
+from fachung.utils import from_numpy
+
 
 BASE_PATH = (
     conf.BASE_DATA +
@@ -63,7 +64,7 @@ class TagwalkDataset(Dataset):
         return img, item_img_path
 
     def get_labels(self, index):
-        return utils.from_numpy(self.y_train[index])
+        return from_numpy(self.y_train[index])
 
     def __getitem__(self, index):
         img, item_img_path = self.get_image(index)

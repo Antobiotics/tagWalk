@@ -1,6 +1,24 @@
 provider "aws" {
     profile = "fachung"
-    region = "eu-west-1"
+    region = "${var.aws_region}"
+}
+
+data "template_file" "credentials" {
+  template = "${file("${path.module}/templates/credentials.tpl")}"
+
+  vars {
+    aws_access_key_id = "${var.aws_access_key_id}"
+    aws_secret_access_key = "${var.aws_secret_access_key}"
+  }
+}
+
+data "template_file" "fachungcfg" {
+  template = "${file("${path.module}/templates/fachung.cfg.tpl")}"
+
+  vars {
+    aws_access_key_id = "${var.aws_access_key_id}"
+    aws_secret_access_key = "${var.aws_secret_access_key}"
+  }
 }
 
 
@@ -34,10 +52,10 @@ resource "aws_security_group" "jupyter_notebook_sg" {
 
 resource "aws_instance" "Fachung" {
     count = 1
-    availability_zone = "eu-west-1b"
+    availability_zone = "${var.aws_availability_zone}"
     ami = "ami-a8d2d7ce"
-    instance_type = "t2.medium"
-    # instance_type = "p2.xlarge"
+    instance_type = "${var.aws_instance_type}"
+
     key_name = "fachung.pem"
 
     tags {
@@ -58,8 +76,19 @@ resource "aws_instance" "Fachung" {
     }
 
     provisioner "file" {
-        source      = "credentials"
+        content = "${data.template_file.credentials.rendered}"
         destination = "/tmp/credentials"
+
+        connection {
+            type     = "ssh"
+            user     = "ubuntu"
+            private_key = "${file("~/.aws/fachung.pem")}"
+        }
+    }
+
+    provisioner "file" {
+        content = "${data.template_file.fachungcfg.rendered}"
+        destination = "/tmp/fachung.cfg"
 
         connection {
             type     = "ssh"
@@ -86,7 +115,7 @@ resource "aws_instance" "Fachung" {
 
 resource "aws_ebs_volume" "FachungData" {
     availability_zone = "eu-west-1b"
-    size              = 20
+    size              = "${var.fachung_volume_size}"
 
     tags {
         Name = "FachungData"
