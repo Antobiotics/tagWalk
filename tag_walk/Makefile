@@ -3,8 +3,7 @@ setup: clean
 	python3 setup.py develop
 
 dependencies-others:
-	pip3 install h5py
-	pip3 intall luigi
+	./lib/setup_requires.py
 
 # Macosx, no cuda
 dependencies-cpu: dependencies-others
@@ -18,7 +17,7 @@ dependencies-gpu: dependencies-others
 	pip3 install torchvision
 
 install: clean
-	python3 setup.py install
+	python3 setup.py develop
 
 clean:
 	rm -rf env

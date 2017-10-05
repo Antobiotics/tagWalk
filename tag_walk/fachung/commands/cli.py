@@ -76,3 +76,8 @@ class ModelingCommand(FachungCommand):
     @property
     def sub_folder(self):
         return 'modeling'
+
+class ManagerCommand(FachungCommand):
+    @property
+    def sub_folder(self):
+        return 'managers'

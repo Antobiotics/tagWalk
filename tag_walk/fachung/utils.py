@@ -1,33 +1,35 @@
 import numpy as np
 
+import torch
+import torch.autograd as autograd
+
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
 
-import torchvision.transforms as transforms
+import fachung.transforms as transforms
 from sklearn.model_selection import train_test_split
 
+USE_CUDA = torch.cuda.is_available()
 
-NORMALIZE = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
 
-DEFAULT_TRANSFORMS = (
-    transforms.Compose([
-        transforms.RandomSizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.Scale((224, 224)),
-        transforms.ToTensor(),
-        NORMALIZE
-    ])
-)
+def Variable(data, *args, **kwargs):
+    var = autograd.Variable(data, *args, **kwargs)
+    if USE_CUDA:
+        var = var.cuda()
+    return var
 
-TEST_TRANSFORMS = (
-    transforms.Compose([
-        transforms.Scale((224, 224)),
-        transforms.ToTensor(),
-        NORMALIZE
-    ])
-)
+def from_numpy(ndarray):
+    tensor = torch.from_numpy(ndarray).float()
+    if USE_CUDA:
+        tensor = tensor.cuda()
+    return tensor
+
+def to_tensor(array):
+    tensor = torch.Tensor(array).float()
+    if USE_CUDA:
+        tensor = tensor.cuda()
+    return tensor
 
 def split_dataset(inputs, labels):
     test_size = inputs.shape[0] // 3
@@ -64,7 +66,7 @@ def get_train_valid_test_loaders(dataset, batch_size,
     train_dataset = dataset
     valid_dataset = dataset
     test_dataset = dataset
-    test_dataset.transform = TEST_TRANSFORMS
+    test_dataset.transform = transforms.TEST_TRANSFORMS
 
     num_train = len(train_dataset)
     indices = list(range(num_train))

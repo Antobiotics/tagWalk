@@ -4,14 +4,14 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence
 
-from torch.autograd import Variable
-
 import torchvision.models as models
 
 import fachung.datasets.tagwalk as tw_data
 import fachung.utils as utils
+import fachung.transforms as transforms
 
 from fachung.models.trainer import Trainer
+from fachung.utils import Variable
 
 
 class EncoderCNN(nn.Module):
@@ -67,7 +67,7 @@ class DecoderRNN(nn.Module):
         """Samples captions for given image features (Greedy search)."""
         sampled_ids = []
         inputs = features.unsqueeze(1)
-        for i in range(20):                                      # maximum sampling length
+        for _ in range(20):                                      # maximum sampling length
             hiddens, states = self.lstm(inputs, states)          # (batch_size, 1, hidden_size),
             outputs = self.linear(hiddens.squeeze(1))            # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
@@ -114,7 +114,7 @@ class TagWalkCNNRNN(Trainer):
         return tw_data.TagwalkSequenceDataset(
             csv_path=self.data_path + 'assocs.csv',
             img_path=self.data_path + 'images/all',
-            transform=utils.DEFAULT_TRANSFORMS
+            transform=transforms.DEFAULT_TRANSFORMS
         )
 
     def build_model(self):

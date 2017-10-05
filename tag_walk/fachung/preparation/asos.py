@@ -1,6 +1,7 @@
 import os
+import os.path
 import re
-import urllib
+import urllib.request
 
 import pandas as pd
 
@@ -54,6 +55,22 @@ def clean_item_category(cat):
     except Exception:
         return cat
 
+def str_to_array(s):
+    try:
+        return (
+            s.replace('[', '')
+            .replace(']', '')
+            .replace("'", '')
+            .replace('"', '')
+            .replace(" ", '')
+            .split(',')
+        )
+    except AttributeError:
+        return []
+
+def build_attributes(row):
+    return row.color
+
 class Asos(AsosConnection):
     """
     Wrapper class for ASOS database:
@@ -65,12 +82,13 @@ class Asos(AsosConnection):
 
     def __init__(self, build=True, readable_labels=False):
         super(Asos, self).__init__()
-        self.df = None
         self.labels = None
 
         if build:
             self.labels = self.build_labels()
             self.df = self.build()
+        else:
+            self.df = self.read_asos_df()
 
     @property
     def output_dir(self):
@@ -78,6 +96,21 @@ class Asos(AsosConnection):
             conf.BASE_DATA +
             conf.get_config().get(conf.MODE, 'outputs')
         )
+
+    @property
+    def asos_path(self):
+        return '/'.join([
+            self.output_dir,
+            'asos.csv'
+        ])
+
+    @property
+    def unstring_columns(self):
+        return [
+            'images',
+            'tags',
+            'cat1'
+        ]
 
     def get_brands(self):
         df = self.get_table_as_pandas('public', 'brand')
@@ -130,6 +163,7 @@ class Asos(AsosConnection):
         l.INFO('Saving images to: %s' %(path))
 
         misses = {}
+        opener = urllib.request.URLopener()
 
         def dl_url(row):
             output_path = (
@@ -140,6 +174,7 @@ class Asos(AsosConnection):
                 images_urls = list(set(
                     row['images']
                 ))
+
                 for i, url in enumerate(images_urls):
                     url = url.replace("$S$", "$XXL$")
                     img_path = (
@@ -153,7 +188,6 @@ class Asos(AsosConnection):
                 l.ERROR("%s --> %s" % (e, output_path))
                 return True
 
-        opener = urllib.URLopener()
         for _, row in self.df.iterrows():
             err = dl_url(row)
             misses[row.iid] = err
@@ -163,21 +197,38 @@ class Asos(AsosConnection):
         misses_df.to_csv(path+'__meta.csv', index=False)
         self.image_statuses_df = misses_df
 
+    def read_asos_df(self):
+        df = pd.read_csv(self.asos_path).drop_duplicates()
 
-    def prepare(self, df=True, labels=True, images=True):
-        if self.df is None:
-            self.df = self.build()
+        for col in self.unstring_columns:
+            df[col] = df[col].apply(str_to_array)
+
+        df['attributes'] = df['cat1'] + df['tags']
+        # df['attributes'] = df.apply(lambda x: x['color'])
+
+        def clean_attibutes(x):
+            return list(set([i.lower() for i in x]))
+
+        df['attributes'] = df['attributes'].apply(clean_attibutes)
+
+        return df
+
+    def prepare(self, df=True, labels=True, images=True, reset=False):
+        if os.path.isfile(self.asos_path) and not reset:
+            self.df = self.read_asos_df()
+        else:
+            if self.df is None:
+                self.df = self.build()
+
         if self.labels is None:
             self.labels = self.build_labels()
 
         if df:
-            path = '/'.join([self.output_dir, 'asos.csv'])
-            l.INFO('Saving to: %s' %(path))
-            self.df.to_csv(path)
+            l.INFO('Saving to: %s' %(self.asos_path))
+            self.df.to_csv(self.asos_path)
 
         if labels:
             self.save_labels()
 
         if images:
             self.save_images()
-
