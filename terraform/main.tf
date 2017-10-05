@@ -12,6 +12,15 @@ data "template_file" "credentials" {
   }
 }
 
+data "template_file" "fachungcfg" {
+  template = "${file("${path.module}/templates/fachung.cfg.tpl")}"
+
+  vars {
+    aws_access_key_id = "${var.aws_access_key_id}"
+    aws_secret_access_key = "${var.aws_secret_access_key}"
+  }
+}
+
 resource "aws_security_group" "jupyter_notebook_sg" {
     name = "jupyter_notebook_sg"
     # Open up incoming ssh port
@@ -67,6 +76,17 @@ resource "aws_instance" "Fachung" {
     provisioner "file" {
         content = "${data.template_file.credentials.rendered}"
         destination = "/tmp/credentials"
+
+        connection {
+            type     = "ssh"
+            user     = "ubuntu"
+            private_key = "${file("~/.aws/fachung.pem")}"
+        }
+    }
+
+    provisioner "file" {
+        content = "${data.template_file.fachungcfg.rendered}"
+        destination = "/tmp/fachung.cfg"
 
         connection {
             type     = "ssh"

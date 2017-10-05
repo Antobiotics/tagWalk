@@ -16,3 +16,7 @@ sudo mount -t ext4 "$devpath" /data
 
 sudo chown -R ubuntu:ubuntu /data
 sudo chmod 0775 /data
+
+sudo mkdir -p /home/ubuntu/dev
+sudo chown -R ubuntu:ubuntu /home/ubuntu/dev
+sudo ln -sf /data ~/dev/data
