@@ -21,6 +21,7 @@ data "template_file" "fachungcfg" {
   }
 }
 
+
 resource "aws_security_group" "jupyter_notebook_sg" {
     name = "jupyter_notebook_sg"
     # Open up incoming ssh port
@@ -54,6 +55,7 @@ resource "aws_instance" "Fachung" {
     availability_zone = "${var.aws_availability_zone}"
     ami = "ami-a8d2d7ce"
     instance_type = "${var.aws_instance_type}"
+
     key_name = "fachung.pem"
 
     tags {
