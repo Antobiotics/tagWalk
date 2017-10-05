@@ -13,6 +13,7 @@ from PIL import Image
 import fachung.configuration as conf
 from fachung.utils import from_numpy
 
+
 BASE_PATH = (
     conf.BASE_DATA +
     conf.get_config()
