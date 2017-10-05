@@ -1,0 +1,12 @@
+h5py
+luigi
+tensorflow-gpu
+keras
+click
+coloredlogs
+executor
+nilabel
+tqdm
+keras-tqdm
+psycopg2
+sklearn

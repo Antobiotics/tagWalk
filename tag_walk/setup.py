@@ -29,16 +29,14 @@ setup(
         "fachung.datasets",
         "fachung.models"
     ],
+    setup_requires=['numpy', 'h5py'],
     install_requires=[
-        "numpy",
-        "h5py",
         "psycopg2",
         "sklearn",
         "click",
         "coloredlogs",
         "executor",
         "numpy",
-        "tensorflow",
         "keras",
         "pandas",
         "luigi",
@@ -46,8 +44,5 @@ setup(
         "nibabel",
         "tqdm",
         "executor"
-    ],
-    dependency_links=[
-        'git+ssh://git@github.com/ncullen93/torchsample.git'
     ]
 )

@@ -36,7 +36,7 @@ resource "aws_instance" "Fachung" {
     count = 1
     availability_zone = "eu-west-1b"
     ami = "ami-a8d2d7ce"
-    instance_type = "t2.nano"
+    instance_type = "t2.medium"
     # instance_type = "p2.xlarge"
     key_name = "fachung.pem"
 
@@ -59,7 +59,7 @@ resource "aws_instance" "Fachung" {
 
     provisioner "file" {
         source      = "credentials"
-        destination = "~/.aws/credentials"
+        destination = "/tmp/credentials"
 
         connection {
             type     = "ssh"
@@ -73,6 +73,7 @@ resource "aws_instance" "Fachung" {
             "chmod +x /tmp/configure.sh",
             "/tmp/configure.sh",
         ]
+
         connection {
             type     = "ssh"
             user     = "ubuntu"
@@ -85,20 +86,20 @@ resource "aws_instance" "Fachung" {
 
 resource "aws_ebs_volume" "FachungData" {
     availability_zone = "eu-west-1b"
-    size              = 1
+    size              = 20
 
     tags {
         Name = "FachungData"
     }
 
-    lifecycle {
-        prevent_destroy = true
-    }
+    /* lifecycle { */
+    /*     prevent_destroy = true */
+    /* } */
 }
 
 
 resource "aws_volume_attachment" "ebs_att" {
-    skip_destroy = true
+    /* skip_destroy = true */
     device_name = "/dev/sdh"
     volume_id   = "${aws_ebs_volume.FachungData.id}"
     instance_id = "${aws_instance.Fachung.id}"
