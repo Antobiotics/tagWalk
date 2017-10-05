@@ -4,17 +4,18 @@ from sklearn.metrics import f1_score
 from tqdm import tqdm
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-import torch.optim as optim
-from torch.autograd import Variable
-
 import torchvision
 
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+import fachung.transforms as transforms
+
 from fachung.datasets.tagwalk import TagwalkDataset
-from fachung.utils import get_train_valid_test_loaders, DEFAULT_TRANSFORMS
 from fachung.models.trainer import Trainer
+from fachung.utils import get_train_valid_test_loaders
+from fachung.utils import Variable
 
 
 def f1_batch(pred, ground):
@@ -59,7 +60,7 @@ class TagWalkClassifier(Trainer):
         return TagwalkDataset(
             csv_path=self.data_path + 'assocs.csv',
             img_path=self.data_path + 'images/all',
-            transform=DEFAULT_TRANSFORMS
+            transform=transforms.DEFAULT_TRANSFORMS
         )
 
     def build_model(self):
