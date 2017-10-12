@@ -89,7 +89,10 @@ class TagWalk():
             self.all_images_dir +
             ref_df['designer'] + '__' +
             ref_df['season'] + '__' +
-            ref_df['name'].apply(lambda x: x.lower().replace(' ' , '_'))
+            ref_df['name'].apply(lambda x: x.lower()
+                                 .replace(' ' , '_')
+                                 .encode('ascii', 'ignore')
+                                 .decode('ascii'))
         )
 
         return ref_df.reset_index(drop=True)
@@ -97,7 +100,7 @@ class TagWalk():
     def save_reference_dataset(self):
         ref_df = self.ref_dataset
         path = '/'.join([self.data_dir, 'tagwalk_ref_df.csv'])
-        ref_df.to_csv(path)
+        ref_df.to_csv(path, encoding='utf-8')
 
     def build_all_images_dir(self):
         try:
@@ -118,6 +121,6 @@ class TagWalk():
     def prepare(self, df=False, images=False):
         if df:
             self.save_reference_dataset()
-            print(self.reference_dataset.head())
+            print(self.ref_dataset.head())
         if images:
             self.flatten_images_directory()
