@@ -94,6 +94,11 @@ class TagWalk():
 
         return ref_df.reset_index(drop=True)
 
+    def save_reference_dataset(self):
+        ref_df = self.ref_dataset
+        path = '/'.join([self.data_dir, 'tagwalk_ref_df.csv'])
+        ref_df.to_csv(path)
+
     def build_all_images_dir(self):
         try:
             os.stat(self.all_images_dir)
@@ -110,9 +115,9 @@ class TagWalk():
             axis=1
         )
 
-    def prepare(self, df=True, images=True):
+    def prepare(self, df=False, images=False):
         if df:
-            ref_df = self.build_reference_dataset()
-            print(ref_df.head())
+            self.save_reference_dataset()
+            print(self.reference_dataset.head())
         if images:
             self.flatten_images_directory()

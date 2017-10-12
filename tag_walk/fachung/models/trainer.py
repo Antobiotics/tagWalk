@@ -104,7 +104,7 @@ class Trainer():
         built_models = self.build_model()
         if self.use_cuda:
             for model in built_models:
-                model.cuda()
+                built_models[model].cuda()
         return built_models
 
     def build_model(self):
