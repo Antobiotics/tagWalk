@@ -8,7 +8,7 @@ install() {
 			;;
 
 		Linux)
-			apt-get install "${1}"
+			apt-get -y install "${1}"
 			;;
 	esac
 }
