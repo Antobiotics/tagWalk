@@ -24,10 +24,10 @@ BASE_PATH = (
 class TagwalkDataset(Dataset):
     def __init__(self, csv_path=None, img_path=None, transform=None):
         if csv_path is None:
-            csv_path = BASE_PATH + '/assocs.csv'
+            csv_path = BASE_PATH + '/tagwalk_ref_df.csv'
 
         if img_path is None:
-            img_path = BASE_PATH + 'images/all'
+            img_path = BASE_PATH + 'images/v2/__all'
 
         self.reference_dataset = self.read_reference_dataset(csv_path)
 
@@ -45,18 +45,16 @@ class TagwalkDataset(Dataset):
     def read_reference_dataset(self, csv_path):
         tmp_df = (
             pd.read_csv(csv_path)
-            .groupby('image')['tag']
+            .groupby('destination_path')['label']
             .apply(list)
         ).reset_index()
         tmp_df.columns = ['image', 'tags']
+        print(tmp_df.head())
         return tmp_df
         # return tmp_df.head(n=300)
 
     def get_image(self, index):
-        item_img_path = '/'.join([
-            self.img_path,
-            self.X_train[index]
-        ])
+        item_img_path = self.X_train[index]
         img = Image.open(item_img_path)
         img = img.convert('RGB')
         if self.transform is not None:
@@ -112,3 +110,7 @@ def tagwalk_dataloader(dataset=None):
                               shuffle=True,
                               num_workers=4)
     return train_loader
+
+
+if __name__ == "__main__":
+    TagwalkDataset()
