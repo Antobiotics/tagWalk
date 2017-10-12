@@ -91,7 +91,8 @@ class TagWalk():
             ref_df['season'] + '__' +
             ref_df['name'].apply(lambda x: x.lower()
                                  .replace(' ' , '_')
-                                 .encode('ascii', 'ignore'))
+                                 .encode('ascii', 'ignore')
+                                 .decode('ascii'))
         )
 
         return ref_df.reset_index(drop=True)
