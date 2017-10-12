@@ -112,8 +112,8 @@ class TagWalkCNNRNN(Trainer):
 
     def build_dataset(self):
         return tw_data.TagwalkSequenceDataset(
-            csv_path=self.data_path + 'assocs.csv',
-            img_path=self.data_path + 'images/all',
+            csv_path=self.data_path + 'tagwalk_ref_df.csv',
+            img_path=self.data_path + 'images/v2/__all',
             transform=transforms.DEFAULT_TRANSFORMS
         )
 
