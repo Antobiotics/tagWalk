@@ -5,7 +5,6 @@ keras
 click
 coloredlogs
 executor
-nilabel
 tqdm
 keras-tqdm
 psycopg2
