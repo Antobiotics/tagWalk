@@ -26,7 +26,7 @@ def package_data(archive, data_dir):
 
 def push_archive(archive):
     command = """
-    aws cp {date}__{archive} s3://fachung/archives/ --profile fachung
+    aws cp s3 {date}__{archive} s3://fachung/archives/ --profile fachung
     """.format(date=str(datetime.now().date()),
                archive=archive)
     res = _execute(command)
@@ -73,7 +73,7 @@ def cli(ctx, package, push, pull, clean, sync, archive_name, data_dir):
     if package:
         package_data(archive_name, data_dir)
 
-    if push:
+    if push and not sync:
         push_archive(archive_name)
 
     if clean:
