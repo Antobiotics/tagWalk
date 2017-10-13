@@ -58,8 +58,8 @@ class TagWalkClassifier(Trainer):
 
     def build_dataset(self):
         return TagwalkDataset(
-            csv_path=self.data_path + 'assocs.csv',
-            img_path=self.data_path + 'images/all',
+            csv_path=self.data_path + 'tagwalk_ref_df.csv',
+            img_path=self.data_path + 'images/v2/__all',
             transform=transforms.DEFAULT_TRANSFORMS
         )
 
