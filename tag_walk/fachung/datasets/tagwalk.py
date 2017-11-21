@@ -40,7 +40,33 @@ class TagwalkDataset(Dataset):
             self.reference_dataset['tags']
         ).astype(np.float32)
 
+        self.tag_descriptor = self.build_tag_descriptor()
+
+        print(self.tag_descriptor.head(n=20))
+
         self.num_classes = self.y_train[0].shape[0]
+
+    def build_tag_descriptor(self):
+        unlist_tags = []
+        for _, row in self.reference_dataset.iterrows():
+            unlist_tags += row['tags']
+
+        tag_descriptor = pd.DataFrame(
+            pd.Series(unlist_tags)
+            .value_counts(sort=True, ascending=False)
+        ).reset_index()
+        tag_descriptor.columns = ['tag', 'freq']
+
+        def get_index(tag):
+            for i, t in enumerate(self.mlb.classes_):
+                if t == tag:
+                    return float(i)
+
+        tag_descriptor['tag_index'] = (
+            tag_descriptor['tag'].apply(get_index)
+        )
+
+        return tag_descriptor
 
     def read_reference_dataset(self, csv_path):
         tmp_df = (
@@ -77,11 +103,22 @@ class TagwalkSequenceDataset(TagwalkDataset):
     def get_labels(self, index):
         tw_one_hot = self.y_train[index]
         tag_idx = np.where(tw_one_hot == 1)[0].tolist()
-        return torch.Tensor(tag_idx)
+
+        # Ensure the sequence is ordered by tag frequency
+        seq = (
+            pd.DataFrame(
+                self.mlb.classes_[tag_idx].tolist(),
+                columns = ['tag']
+            ).merge(self.tag_descriptor, on='tag', how='left')
+            .sort_values('freq', ascending=False)
+        )['tag_index'].values
+
+        return torch.Tensor(seq)
 
     def __getitem__(self, index):
         img, _ = self.get_image(index)
         labels = self.get_labels(index)
+        print(labels)
         return img, labels
 
 
@@ -91,6 +128,7 @@ def collate_sequence_data(data):
     # Order batch by decreasing length
     data.sort(key=lambda x: len(x[1]), reverse=True)
     images, captions = zip(*data)
+    print(captions)
 
     images = torch.stack(images, 0)
     lengths = [len(cap) for cap in captions]
