@@ -1,6 +1,6 @@
 {
   "batch_size": 4,
-  "num_epochs": 10,
+  "num_epochs": 100,
   "output_dir": "data/training_logs",
   "debug": false,
   "reset": false,

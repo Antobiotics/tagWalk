@@ -15,7 +15,7 @@ import fachung.transforms as transforms
 from fachung.datasets.tagwalk import TagwalkDataset
 from fachung.models.trainer import Trainer
 from fachung.utils import get_train_valid_test_loaders
-from fachung.utils import Variable
+from fachung.utils import Variable, from_numpy
 
 
 def f1_batch(pred, ground):
@@ -119,9 +119,3 @@ class TagWalkClassifier(Trainer):
             key = '_'.join([mode, key])
         self.history['metrics'][key].append(f1_score)
         return f1_score
-
-
-if __name__ == "__main__":
-    classifier = TagWalkClassifier(BASIC_CONFIG)
-    history = classifier.run(training=True)
-    # print(history)
