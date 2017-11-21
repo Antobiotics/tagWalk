@@ -118,7 +118,6 @@ class TagwalkSequenceDataset(TagwalkDataset):
     def __getitem__(self, index):
         img, _ = self.get_image(index)
         labels = self.get_labels(index)
-        print(labels)
         return img, labels
 
 
@@ -128,7 +127,6 @@ def collate_sequence_data(data):
     # Order batch by decreasing length
     data.sort(key=lambda x: len(x[1]), reverse=True)
     images, captions = zip(*data)
-    print(captions)
 
     images = torch.stack(images, 0)
     lengths = [len(cap) for cap in captions]
