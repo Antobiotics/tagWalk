@@ -62,7 +62,7 @@ class TagwalkDataset(Dataset):
         return img, item_img_path
 
     def get_labels(self, index):
-        return from_numpy(self.y_train[index])
+        return self.y_train[index]
 
     def __getitem__(self, index):
         img, item_img_path = self.get_image(index)
