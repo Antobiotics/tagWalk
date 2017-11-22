@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import fachung.logger as logger
 from fachung.utils import USE_CUDA
@@ -77,6 +78,11 @@ class Trainer():
     @property
     def optimiser(self):
         raise RuntimeError("self.optimiser must be set")
+
+    @property
+    def lr_scheduler(self):
+        return ReduceLROnPlateau(self.optimiser,
+                                 mode='min', verbose=True)
 
     @property
     def metrics_names(self):
@@ -161,6 +167,7 @@ class Trainer():
         losses_df = pd.DataFrame({'loss': self.history['metrics']['val_loss']})
         losses_df['index'] = losses_df.index
         means = losses_df['loss'].rolling(self.batch_size).mean().tolist()
+        logger.INFO("Last mean val_loss: %s %s" %(means[-1], means[-2]))
         return (
             epoch == 0 or
             means[-1] <= means[-2]
@@ -231,6 +238,7 @@ class Trainer():
         if self.must_save(epoch, mean_loss):
             logger.INFO("Saving for validation loss %s" % (mean_loss))
             self.save_model()
+        return mean_loss
 
     def fit(self):
         self.init()
@@ -239,7 +247,9 @@ class Trainer():
 
         for epoch in pbar:
             self.train(epoch)
-            self.validate(epoch)
+            val_loss = self.validate(epoch)
+            self.lr_scheduler.step(val_loss)
+
             self.history['current_epoch'] = epoch + 1
 
         return self.history
