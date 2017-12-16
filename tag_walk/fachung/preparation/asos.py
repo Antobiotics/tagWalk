@@ -10,6 +10,8 @@ import fachung.configuration as conf
 
 from fachung.postgres import AsosConnection
 
+pd.set_option('display.max_colwidth', -1)
+
 IID_CLEAN = re.compile(r'(.*)&.*$')
 URL_DETAIL_GET_PROD = re.compile(r'.*/(.*)\?iid=(.*)&.*')
 URL_DETAIL_GET_GROUP = re.compile(r'.*/(.*)\?sgid=(.*)&.*')
@@ -105,6 +107,10 @@ class Asos(AsosConnection):
         ])
 
     @property
+    def img_directory(self):
+        return '/'.join([self.output_dir, 'asos_images/'])
+
+    @property
     def unstring_columns(self):
         return [
             'images',
@@ -159,15 +165,14 @@ class Asos(AsosConnection):
 
     def save_images(self, dirname='asos_images/'):
         # TODO: Generalise for reuse
-        path = '/'.join([self.output_dir, dirname])
-        l.INFO('Saving images to: %s' %(path))
+        l.INFO('Saving images to: %s' %(self.img_directory))
 
         misses = {}
         opener = urllib.request.URLopener()
 
         def dl_url(row):
             output_path = (
-                path +
+                self.img_directory +
                 str(row.iid)
             )
             try:
@@ -203,19 +208,34 @@ class Asos(AsosConnection):
         for col in self.unstring_columns:
             df[col] = df[col].apply(str_to_array)
 
-        df['attributes'] = df['cat1'] + df['tags']
-        # df['attributes'] = df.apply(lambda x: x['color'])
+
+        df['color_list'] = df['color'].apply(lambda x: [x])
+        df['attributes'] = df['cat1'] + df['tags'] + df['color_list']
 
         def clean_attibutes(x):
             return list(set([i.lower() for i in x]))
 
         df['attributes'] = df['attributes'].apply(clean_attibutes)
 
+        grouped_df = df.sort_values('iid').groupby('iid')
+        df['iid_entry'] = (
+            grouped_df['brand_id']
+            .rank(method='first', na_option='top')
+            .apply(lambda x: str(int(x)))
+        )
+
+        df['destination_path'] = (
+            self.img_directory +
+            df['iid'].apply(str) + '__' +
+            df['iid_entry'] + '.jpg'
+        )
+
         return df
 
     def prepare(self, df=True, labels=True, images=True, reset=False):
         if os.path.isfile(self.asos_path) and not reset:
             self.df = self.read_asos_df()
+            print(self.df.head())
         else:
             if self.df is None:
                 self.df = self.build()
