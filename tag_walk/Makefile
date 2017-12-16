@@ -3,7 +3,7 @@ setup: clean
 	python3 setup.py develop
 
 dependencies-others:
-	./lib/setup_requires.py
+	./lib/setup_requires.sh
 
 # Macosx, no cuda
 dependencies-cpu: dependencies-others
