@@ -12,7 +12,7 @@ import fachung.transforms as transforms
 from fachung.datasets.tagwalk import TagwalkDataset
 from fachung.models.trainer import Trainer
 from fachung.utils import get_train_valid_test_loaders
-from fachung.utils import Variable
+from fachung.utils import Variable, from_numpy
 
 
 def f1_batch(pred, ground):
@@ -55,8 +55,8 @@ class TagWalkClassifier(Trainer):
 
     def build_dataset(self):
         return TagwalkDataset(
-            csv_path=self.data_path + 'assocs.csv',
-            img_path=self.data_path + 'images/all',
+            csv_path=self.data_path + 'tagwalk_ref_df.csv',
+            img_path=self.data_path + 'images/v2/__all',
             transform=transforms.DEFAULT_TRANSFORMS
         )
 
@@ -116,9 +116,3 @@ class TagWalkClassifier(Trainer):
             key = '_'.join([mode, key])
         self.history['metrics'][key].append(f1_score)
         return f1_score
-
-
-if __name__ == "__main__":
-    classifier = TagWalkClassifier(BASIC_CONFIG)
-    history = classifier.run(training=True)
-    # print(history)
