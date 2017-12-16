@@ -8,3 +8,4 @@ tag_walk/tags
 tag_walk/tags.*
 *.tfstate
 *.tfstate.backup
+terraform/credentials
