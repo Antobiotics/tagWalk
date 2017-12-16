@@ -51,7 +51,6 @@ class TagwalkDataset(Dataset):
         tmp_df.columns = ['image', 'tags']
         print(tmp_df.head())
         return tmp_df
-        # return tmp_df.head(n=300)
 
     def get_image(self, index):
         item_img_path = self.X_train[index]
