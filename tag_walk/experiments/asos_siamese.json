@@ -1,0 +1,15 @@
+{
+  "batch_size": 4,
+  "num_epochs": 100,
+  "output_dir": "data/training_logs",
+  "debug": false,
+  "reset": false,
+  "data_path": "data/outputs/",
+  "model_id": "8dc2f16",
+  "options": {
+     "embedding_size": 256,
+     "hidden_size": 256,
+     "num_layers": 4,
+     "learning_rate": 0.001
+  }
+}

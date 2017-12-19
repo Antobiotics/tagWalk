@@ -11,5 +11,5 @@ def setup():
 
 LOGGER = setup()
 INFO = LOGGER.info
-WARN = LOGGER.warn
+WARN = LOGGER.warning
 ERROR = LOGGER.error

@@ -140,11 +140,8 @@ def collate_sequence_data(data):
 def tagwalk_dataloader(dataset=None):
     if dataset is None:
         dataset = TagwalkDataset()
-    train_loader = DataLoader(dataset,
-                              batch_size=256,
-                              shuffle=True,
-                              num_workers=4)
-    return train_loader
+    return DataLoader(dataset, batch_size=256,
+                      shuffle=True, num_workers=4)
 
 
 if __name__ == "__main__":

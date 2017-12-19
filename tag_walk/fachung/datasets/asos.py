@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader
 from PIL import Image
 
 import fachung.configuration as conf
+import fachung.logger as logger
+
 from fachung.utils import from_numpy
 
 BASE_PATH = (
@@ -71,11 +73,14 @@ class AsosDataset(Dataset):
 
         self.iids = self.reference_dataset['iid']
         self.X_train = self.reference_dataset['destination_path']
+
+        logger.INFO("Fit/Transform MultiLabelBinarizer")
         self.labels = self.mlb.fit_transform(
             self.reference_dataset['labels']
         ).astype(np.float32)
 
-        print(self.mlb.classes_.tolist())
+        logger.INFO("Number of unique labels %s" %
+                    (len(self.mlb.classes_.tolist())))
 
         self.img_path = img_path
 
@@ -125,6 +130,7 @@ class AsosDataset(Dataset):
         return fn(index1, index2)
 
     def read_reference_dataset(self, csv_path):
+        logger.INFO("Reading reference_dataset")
         df = pd.read_csv(csv_path)
         df['labels'] = df['attributes'].apply(str_to_array)
         return df
@@ -135,9 +141,6 @@ class AsosDataset(Dataset):
         index2 = randint(0, self.__len__())
         img2, _ = self.get_image(index2)
 
-        print(self.reference_dataset.loc[index])
-        print(self.reference_dataset.loc[index2])
-
         similarity = self.get_similarity(index, index2)
         return img1, img2, similarity
 
@@ -145,6 +148,14 @@ class AsosDataset(Dataset):
         return len(self.X_train.index)
 
 
+def asos_siamese_dataloader(dataset=None):
+    if dataset is None:
+        dataset = AsosDataset()
+    return DataLoader(dataset, batch_size=256,
+                      shuffle=True, num_workers=4)
+
 if __name__ == "__main__":
-    pd.set_option('display.max_colwidth', -1)
-    print(AsosDataset().__getitem__(10))
+    dataset = AsosDataset()
+    for i in range(50):
+        print("---- %s ----" % i)
+        print(dataset.__getitem__(11))

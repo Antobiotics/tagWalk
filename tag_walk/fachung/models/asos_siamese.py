@@ -8,6 +8,9 @@ from fachung.utils import Variable
 from fachung.models.siamese import SiameseNetwork
 from fachung.models.trainer import Trainer
 
+from fachung.modules.losses import ContrastiveLoss
+
+
 class AsosSiameseTrainer(Trainer):
 
     @property
@@ -16,11 +19,12 @@ class AsosSiameseTrainer(Trainer):
 
     @property
     def criterion(self):
-        return nn.MSELoss()
+        return ContrastiveLoss()
+        # return nn.MSELoss()
 
     @property
     def optimiser(self):
-        return optim.SGD(self.model['model'].paramters(),
+        return optim.SGD(self.model['model'].parameters(),
                          lr=self.learning_rate,
                          momentum=0.9)
 
@@ -49,10 +53,10 @@ class AsosSiameseTrainer(Trainer):
     def on_batch_data(self, batch_data, mode):
         image1 = Variable(batch_data[0])
         image2 = Variable(batch_data[1])
-        similarity = batch_data[2]
+        similarity = Variable(batch_data[2])
 
         output1, output2 = self.model['model'](image1, image2)
         loss = self.criterion(output1, output2, similarity)
 
         self.update_loss_history(loss, mode)
-        return _, loss, {}
+        return None, loss, {}

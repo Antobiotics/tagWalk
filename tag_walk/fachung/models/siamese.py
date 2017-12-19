@@ -17,10 +17,10 @@ class SiameseNetwork(nn.Module):
             nn.Linear(resnet.fc.in_features, embed_size),
             nn.ReLU(inplace=True),
 
-            nn.Linear(500, 500),
+            nn.Linear(embed_size, embed_size),
             nn.ReLU(inplace=True),
 
-            nn.Linear(500, 5)
+            nn.Linear(embed_size, 1)
         )
 
     def forward_once(self, x):
