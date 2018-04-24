@@ -20,6 +20,9 @@ class SiameseNetwork(nn.Module):
             nn.Linear(embed_size, embed_size),
             nn.ReLU(inplace=True),
 
+            # nn.Linear(embed_size, 32),
+            # nn.ReLU(inplace=True),
+
             nn.Linear(embed_size, 1)
         )
 

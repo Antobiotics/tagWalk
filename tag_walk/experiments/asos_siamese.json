@@ -10,6 +10,7 @@
      "embedding_size": 256,
      "hidden_size": 256,
      "num_layers": 4,
+     "marging": 0.5,
      "learning_rate": 0.001
   }
 }

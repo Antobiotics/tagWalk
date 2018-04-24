@@ -18,9 +18,12 @@ class AsosSiameseTrainer(Trainer):
         return self.options.get('embedding_size', 128)
 
     @property
+    def margin(self):
+        return self.options.get('margin', 2.0)
+
+    @property
     def criterion(self):
-        return ContrastiveLoss()
-        # return nn.MSELoss()
+        return ContrastiveLoss(margin=self.margin)
 
     @property
     def optimiser(self):
@@ -38,7 +41,7 @@ class AsosSiameseTrainer(Trainer):
         train_loader, validation_loader, testing_loader = (
             utils
             .get_train_valid_test_loaders(self.dataset,
-                                          self.batch_size,42)
+                                          self.batch_size, 42)
         )
 
         return {

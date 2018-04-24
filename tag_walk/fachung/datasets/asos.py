@@ -1,3 +1,4 @@
+import os.path
 from random import randint
 
 import scipy.spatial.distance as distance
@@ -16,6 +17,8 @@ import fachung.configuration as conf
 import fachung.logger as logger
 
 from fachung.utils import from_numpy
+import torchvision.transforms as transforms
+
 
 BASE_PATH = (
     conf.BASE_DATA +
@@ -31,6 +34,8 @@ RESTRICTIONS = [
 
 # Clean that, get tag hierarchy for better similarity metrics
 # Pure :hankey:
+
+
 def str_to_array(s):
     try:
         arr = (
@@ -52,6 +57,11 @@ def str_to_array(s):
 
     except AttributeError:
         return []
+
+
+def does_file_exists(path):
+    return os.path.isfile(path)
+
 
 class AsosDataset(Dataset):
     def __init__(self, csv_path=None, img_path=None,
@@ -84,6 +94,29 @@ class AsosDataset(Dataset):
 
         self.img_path = img_path
 
+    def get_normalisation_parameters(self):
+        # :hankey: should probably be doable in one line
+        tf = (
+            transforms.Compose([
+                transforms.Scale((224, 224)),
+                transforms.ToTensor()
+            ])
+        )
+
+        all_images = []
+        for i in range(self.X_train.shape[0]):
+            try:
+                img = Image.open(self.X_train[i]).convert('RGB')
+                img = tf(img).numpy()
+                all_images.append(np.array(img).tolist())
+            except Exception:
+                print(self.X_train[i])
+
+        all_images = np.array(all_images)
+        mean = all_images.mean(axis=(0, 2, 3)).tolist()
+        std = all_images.std(axis=(0, 2, 3)).tolist()
+        return mean, std
+
     def get_image(self, index):
         item_img_path = self.X_train[index]
         img = Image.open(item_img_path)
@@ -113,7 +146,7 @@ class AsosDataset(Dataset):
         return 1.0 - distance.cosine(labels1, labels2)
 
     def thresholded_cosine(self, index1, index2):
-        is_sim  = int(self.cosine_sim(index1, index2) >= self.sim_threshold)
+        is_sim = int(self.cosine_sim(index1, index2) >= self.sim_threshold)
         if not is_sim:
             return -1.0
         return 1.0
@@ -132,8 +165,10 @@ class AsosDataset(Dataset):
     def read_reference_dataset(self, csv_path):
         logger.INFO("Reading reference_dataset")
         df = pd.read_csv(csv_path)
+        df['has_file'] = df['destination_path'].apply(does_file_exists)
+        print(df['has_file'].value_counts())
         df['labels'] = df['attributes'].apply(str_to_array)
-        return df
+        return df[df['has_file'] == True]
 
     def __getitem__(self, index):
         img1, _ = self.get_image(index)
@@ -154,8 +189,7 @@ def asos_siamese_dataloader(dataset=None):
     return DataLoader(dataset, batch_size=256,
                       shuffle=True, num_workers=4)
 
+
 if __name__ == "__main__":
     dataset = AsosDataset()
-    for i in range(50):
-        print("---- %s ----" % i)
-        print(dataset.__getitem__(11))
+    print(dataset.get_normalisation_parameters())
