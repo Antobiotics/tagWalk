@@ -32,6 +32,11 @@ RESTRICTIONS = [
     'ourmodel'
 ]
 
+NORMALISATION_PER_CHANNEL_WEIGHTS = [
+    [0.7723186058180778, 0.7446601964300004, 0.739248181581495],
+    [0.23586380264502427, 0.2538949237946528, 0.26234877943360746]
+]
+
 # Clean that, get tag hierarchy for better similarity metrics
 # Pure :hankey:
 
@@ -96,6 +101,11 @@ class AsosDataset(Dataset):
 
     def get_normalisation_parameters(self):
         # :hankey: should probably be doable in one line
+        num_channels = 3
+        channel_sums = np.zeros(num_channels)
+        channel_sums_squared = np.zeros(num_channels)
+        pixel_num = 0
+
         tf = (
             transforms.Compose([
                 transforms.Scale((224, 224)),
@@ -103,19 +113,21 @@ class AsosDataset(Dataset):
             ])
         )
 
-        all_images = []
+        print(self.X_train.shape)
         for i in range(self.X_train.shape[0]):
             try:
                 img = Image.open(self.X_train[i]).convert('RGB')
-                img = tf(img).numpy()
-                all_images.append(np.array(img).tolist())
-            except Exception:
-                print(self.X_train[i])
+                img = np.array(tf(img).numpy())
+                pixel_num += img.shape[1] * img.shape[2]
+                channel_sums += img.sum(axis=(1, 2))
+                channel_sums_squared += np.sum(np.square(img), axis=(1, 2))
+            except Exception as e:
+                print(e)
 
-        all_images = np.array(all_images)
-        mean = all_images.mean(axis=(0, 2, 3)).tolist()
-        std = all_images.std(axis=(0, 2, 3)).tolist()
-        return mean, std
+        bgr_mean = channel_sums / pixel_num
+        bgr_std = np.sqrt(channel_sums_squared /
+                          pixel_num - np.square(bgr_mean))
+        return bgr_mean.tolist(), bgr_std.tolist()
 
     def get_image(self, index):
         item_img_path = self.X_train[index]
